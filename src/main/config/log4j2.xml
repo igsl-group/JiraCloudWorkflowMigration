@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="error" name="JiraCloudWorkflowMigration">
+    <Appenders>
+        <Console name="Console" target="SYSTEM_OUT">
+            <PatternLayout pattern="%m%n" />
+        </Console>
+        <RollingFile name="RollingFile" 
+            fileName="JiraCloudWorkflowMigration.log" 
+            filePattern="JiraCloudWorkflowMigration.%d{yyyy-MM-dd-HH-mm-ss}.log.gz">
+            <PatternLayout>
+                <Pattern>%d %p %c{1.} [%t] %m%n</Pattern>
+            </PatternLayout>
+            <Policies>
+                <SizeBasedTriggeringPolicy size="500 MB" />
+            </Policies>
+        </RollingFile>
+    </Appenders>
+    <Loggers>
+        <Root level="info">
+            <AppenderRef ref="RollingFile" level="info" />
+            <AppenderRef ref="Console" level="info"/>
+        </Root>
+        <Logger name="com.igsl" level="debug" additivity="false">
+            <AppenderRef ref="RollingFile" level="debug" />
+            <AppenderRef ref="Console" level="info" />
+        </Logger>
+    </Loggers>
+</Configuration>

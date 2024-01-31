@@ -1,0 +1,19 @@
+[
+    {
+        "name": "Workflow Transition Screens",
+        "jsonPaths": [
+            "[*]",
+            "workflows[*]",
+            "transitions[*]", 
+            "transitionScreen",
+            "parameters",
+            "screenId"
+        ],
+        "valueProcessorClass": null,
+        "valueRegex": "[0-9]+",
+        "valueCaptureGroups": [],
+        "valueReplacement": null,
+        "modelClass": "com.igsl.model.Screen",
+        "targetWorkflowNames": []
+    }
+]

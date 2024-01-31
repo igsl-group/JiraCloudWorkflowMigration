@@ -1,0 +1,30 @@
+[
+    {
+        "name": "Global Status ID",
+        "jsonPaths": [
+            "[*]",
+            "statuses[*]", 
+            "id"
+        ],
+        "valueProcessorClass": null,
+        "valueRegex": "[0-9]+",
+        "valueCaptureGroups": [],
+        "valueReplacement": null,
+        "modelClass": "com.igsl.model.Status",
+        "targetWorkflowNames": []
+    },
+    {
+        "name": "Global Status Reference",
+        "jsonPaths": [
+            "[*]",
+            "statuses[*]", 
+            "statusReference"
+        ],
+        "valueProcessorClass": null,
+        "valueRegex": "[0-9]+",
+        "valueCaptureGroups": [],
+        "valueReplacement": null,
+        "modelClass": "com.igsl.model.Status",
+        "targetWorkflowNames": []
+    }
+]

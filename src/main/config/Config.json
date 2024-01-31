@@ -1,0 +1,20 @@
+{
+    "scheme": "https",
+    "production": "kcwong.atlassian.net",
+    "sandbox": "kcwong.atlassian.net",
+    "email": "kc.wong@igsl-group.com",
+    "token": null,
+    "rate": 100,
+    "period": 1000,
+    "objectTypePackage": "com.igsl.model",
+    "objectTypes": [
+        "Status",
+        "Project",
+        "Field",
+        "Screen",
+        "Priority",
+        "User",
+        "Group",
+        "Workflow"
+    ]
+}

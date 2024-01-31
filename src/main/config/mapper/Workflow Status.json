@@ -1,0 +1,49 @@
+[
+    {
+        "name": "Workflow Status Reference",
+        "jsonPaths": [
+            "[*]",
+            "workflows[*]", 
+            "statuses[*]",
+            "statusReference"
+        ],
+        "valueProcessorClass": null,
+        "valueRegex": "[0-9]+",
+        "valueCaptureGroups": [],
+        "valueReplacement": null,
+        "modelClass": "com.igsl.model.Status",
+        "targetWorkflowNames": []
+    },
+    {
+        "name": "Workflow From Status Reference",
+        "jsonPaths": [
+            "[*]",
+            "workflows[*]",
+            "transitions[*]", 
+            "from[*]",
+            "statusReference"
+        ],
+        "valueProcessorClass": null,
+        "valueRegex": "[0-9]+",
+        "valueCaptureGroups": [],
+        "valueReplacement": null,
+        "modelClass": "com.igsl.model.Status",
+        "targetWorkflowNames": []
+    },
+    {
+        "name": "Workflow To Status Reference",
+        "jsonPaths": [
+            "[*]",
+            "workflows[*]",
+            "transitions[*]", 
+            "to",
+            "statusReference"
+        ],
+        "valueProcessorClass": null,
+        "valueRegex": "[0-9]+",
+        "valueCaptureGroups": [],
+        "valueReplacement": null,
+        "modelClass": "com.igsl.model.Status",
+        "targetWorkflowNames": []
+    }
+]
