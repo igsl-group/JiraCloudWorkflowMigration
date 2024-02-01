@@ -160,7 +160,7 @@ Each file contains an array of objects:
             "workflows[*]",
             "transitions[*]",
             "actions[*]",
-            "parameters[?(@.appKey==\"com.onresolve.jira.groovy.groovyrunner__script-postfunction\"]",
+            "parameters[?(@.appKey==\"com.onresolve.jira.groovy.groovyrunner__script-postfunction\")]",
             "config"
         ],
         "valueProcessorClass": "com.igsl.workflow.preprocessor.ScriptRunnerCompressedData",
@@ -197,7 +197,7 @@ Each file contains an array of objects:
             "workflows[*]",
             "transitions[*]",
             "actions[*]",
-            "parameters[?(@.appKey==\"com.onresolve.jira.groovy.groovyrunner__script-postfunction\"]",
+            "parameters[?(@.appKey==\"com.onresolve.jira.groovy.groovyrunner__script-postfunction\")]",
             "config"
         ],
         "valueProcessorClass": "com.igsl.workflow.preprocessor.ScriptRunnerCompressedData",
@@ -223,7 +223,8 @@ Each file contains an array of objects:
     1. This creates a new folder with current timestamp. Rename it to `SANDBOX`.
     1. The folder contains: 
         1. `[Name].csv` - One file per object type. Contains Object ID, unique name and additional columns that can be used to identify the object. 
-        1. `Workflow ([Name]).json` - One file per workflow. JSON is in the bulk format (https://developer.atlassian.com/cloud/jira/platform/rest/v3/api-group-workflows/#api-rest-api-3-workflows-post). 1. Export objects from production: `java -jar JiraCloudWorkflowMigration-[version].jar -ep`
+        1. `Workflow ([Name]).json` - One file per workflow. JSON is in the bulk format (https://developer.atlassian.com/cloud/jira/platform/rest/v3/api-group-workflows/#api-rest-api-3-workflows-post). 
+1. Export objects from production: `java -jar JiraCloudWorkflowMigration-[version].jar -ep`
     1. This creates a new folder with current timestmap. Rename it to `PRODUCTION`.
 1. Compare exported objects: `java -jar JiraCloudWorkflowMigration-[version].jar -m -sd SANDBOX -pd PRODUCTION`.
     1. This creates a new folder with current timestamp. Rename it to `MATCH`.
