@@ -19,7 +19,6 @@ import java.util.Map;
 import java.util.regex.Matcher;
 
 import javax.ws.rs.HttpMethod;
-import javax.ws.rs.core.Response;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -54,8 +53,6 @@ public class JiraCloudWorkflowMigration {
 	private static final Logger LOGGER = LogManager.getLogger();
 	private static final SimpleDateFormat SDF = new SimpleDateFormat("yyyyMMdd_HHmmss");
 	private static final ObjectMapper OM = new ObjectMapper();
-	private static final Configuration JSONPATH_CONFIG_READ_VALUE = Configuration.builder()
-			   .build();
 	private static final Configuration JSONPATH_CONFIG_READ_PATH = Configuration.builder()
 			   .options(com.jayway.jsonpath.Option.AS_PATH_LIST)
 			   .build();
