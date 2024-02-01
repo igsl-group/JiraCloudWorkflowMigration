@@ -396,7 +396,8 @@ public class JiraCloudWorkflowMigration {
 			newValue = map.get(newValue);
 			Log.debug(LOGGER, "Remapped " + modelClassName + " value to: " + newValue);
 		} else {
-			Log.error(LOGGER, "Not mapping found for " + modelClassName + " value: " + newValue);
+			Log.error(LOGGER, "No mapping found for " + modelClassName + " value: " + newValue);
+			throw new Exception("No mapping found for " + modelClassName + " value: " + newValue);
 		}
 		return newValue;
 	}
@@ -435,7 +436,7 @@ public class JiraCloudWorkflowMigration {
 			}			
 			if (mapper.getModelClass() != null) {
 				for (Map.Entry<Integer, String> entry : replacements.entrySet()) {
-					replacement = replacement.replaceAll("\\$" + entry.getKey(), entry.getValue());
+					replacement = replacement.replaceAll("(?<!\\\\)\\$" + entry.getKey(), entry.getValue());
 				}
 			}
 			m.appendReplacement(sb, replacement);
