@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -570,8 +571,13 @@ public class JiraCloudWorkflowMigration {
 			throws Exception {
 		Path workflowDir = Paths.get(cmd.getOptionValue(workflowDirectoryOption));
 		PathMatcher pathMatcher = FileSystems.getDefault().getPathMatcher("glob:{**/*.json,*.json}");
-		Files.list(workflowDir).forEach(path -> {
+		int total = 0;
+		int success = 0;
+		Iterator<Path> it = Files.list(workflowDir).iterator();
+		while (it.hasNext()) {
+			Path path = it.next();
 			if (pathMatcher.matches(path)) {
+				total++;
 				try {
 					JsonNode node = OM.readTree(Files.readString(path));
 					String workflowName = node.get(0).get("workflows").get(0).get("name").asText();
@@ -594,11 +600,13 @@ public class JiraCloudWorkflowMigration {
 						.payload(node.get(0))
 						.request();
 					Log.info(LOGGER, "Workflow updated: " + workflowName + " from file " + path.toString());
+					success++;
 				} catch (Exception ex) {
 					Log.error(LOGGER, "Error updating workflow from file: " + path.toString(), ex);
 				}
-			}
-		});
+			} // If path matches pattern
+		}
+		Log.info(LOGGER, "Workflows updated: " + success + "/" + total);
 	}
 
 	private static void getCredential(Config config) throws Exception {
