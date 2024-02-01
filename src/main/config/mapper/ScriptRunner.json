@@ -2,9 +2,11 @@
     {
         "name": "ScriptRunner PostFunction Custom Field",
         "jsonPaths": [
+            "[*]",
+            "workflows[*]",
             "transitions[*]",
             "actions[*]",
-            "parameters[?(@.appKey==\"com.onresolve.jira.groovy.groovyrunner__script-postfunction\"]",
+            "parameters[?(@.appKey==\"com.onresolve.jira.groovy.groovyrunner__script-postfunction\")]",
             "config"
         ],
         "valueProcessorClass": "com.igsl.workflow.preprocessor.ScriptRunnerCompressedData",
@@ -17,9 +19,11 @@
     {
         "name": "ScriptRunner Validator Custom Field",
         "jsonPaths": [
+            "[*]",
+            "workflows[*]",
             "transitions[*]",
             "actions[*]",
-            "parameters[?(@.appKey==\"com.onresolve.jira.groovy.groovyrunner__script-workflow-validators\"]",
+            "parameters[?(@.appKey==\"com.onresolve.jira.groovy.groovyrunner__script-workflow-validators\")]",
             "config"
         ],
         "valueProcessorClass": "com.igsl.workflow.preprocessor.ScriptRunnerCompressedData",
@@ -32,9 +36,11 @@
     {
         "name": "ScriptRunner Condition Custom Field",
         "jsonPaths": [
+            "[*]",
+            "workflows[*]",
             "transitions[*]",
             "actions[*]",
-            "parameters[?(@.appKey==\"com.onresolve.jira.groovy.groovyrunner__script-workflow-conditions\"]",
+            "parameters[?(@.appKey==\"com.onresolve.jira.groovy.groovyrunner__script-workflow-conditions\")]",
             "config"
         ],
         "valueProcessorClass": null,

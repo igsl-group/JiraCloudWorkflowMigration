@@ -6,18 +6,19 @@ import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.core.json.JsonReadFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 
 public class Config {
+	private static final String SCHEME = "https";
 	private static final String CONFIG_FILENAME = "Config.json";
 	private static final Logger LOGGER = LogManager.getLogger();
 	private static final ObjectMapper OM = JsonMapper.builder()
 			.enable(JsonReadFeature.ALLOW_JAVA_COMMENTS)
 			.build();
 	private static Config instance;
-	private String scheme;
 	private String production;
 	private String sandbox;
 	private String email;
@@ -36,13 +37,11 @@ public class Config {
 	public static Config getInstance() {
 		return instance;
 	}
-	// Generated
+	@JsonIgnore
 	public String getScheme() {
-		return scheme;
+		return SCHEME;
 	}
-	public void setScheme(String scheme) {
-		this.scheme = scheme;
-	}
+	// Generated
 	public String getProduction() {
 		return production;
 	}
