@@ -566,7 +566,7 @@ public class JiraCloudWorkflowMigration {
 		Log.info(LOGGER, "To: " + newValue);
 	}
 	
-	private static void updateProductionWorkflow(Config config, Path outputDir, CommandLine cmd) 
+	private static void updateProductionWorkflow(Config config, CommandLine cmd) 
 			throws Exception {
 		Path workflowDir = Paths.get(cmd.getOptionValue(workflowDirectoryOption));
 		PathMatcher pathMatcher = FileSystems.getDefault().getPathMatcher("glob:{**/*.json,*.json}");
@@ -614,15 +614,21 @@ public class JiraCloudWorkflowMigration {
 			config.setToken(new String(pwd));
 		}	
 	}
+
+	private static Path createOutputDirectory() throws Exception {
+		Path outputDir = Paths.get(SDF.format(new Date()));
+		Files.createDirectories(outputDir);
+		return outputDir;
+	}
 	
 	public static void main(String[] args) throws Exception {
 		Config config = Config.getInstance();
 		CommandLineParser parser = new DefaultParser();
 		CommandLine cmd = null;
-		Path outputDir = Paths.get(SDF.format(new Date()));
-		Files.createDirectories(outputDir);
+		Path outputDir = null;
 		try {
 			cmd = parser.parse(exportSandboxOptions, args);
+			outputDir = createOutputDirectory();
 			getCredential(config);
 			export(config, config.getSandbox(), outputDir, cmd);
 			exportWorkflow(config, config.getSandbox(), outputDir, cmd);
@@ -631,6 +637,7 @@ public class JiraCloudWorkflowMigration {
 		}
 		try {
 			cmd = parser.parse(exportProductionOptions, args);
+			outputDir = createOutputDirectory();
 			getCredential(config);
 			export(config, config.getProduction(), outputDir, cmd);
 			exportWorkflow(config, config.getProduction(), outputDir, cmd);
@@ -639,12 +646,14 @@ public class JiraCloudWorkflowMigration {
 		}
 		try {
 			cmd = parser.parse(matchOptions, args);
+			outputDir = createOutputDirectory();
 			match(config, outputDir, cmd);
 		} catch (ParseException pex) {
 			// Ignore
 		}
 		try {
 			cmd = parser.parse(remapSandboxWorkflowOptions, args);
+			outputDir = createOutputDirectory();
 			remapSandboxWorkflow(config, outputDir, cmd);
 		} catch (ParseException pex) {
 			// Ignore
@@ -664,7 +673,7 @@ public class JiraCloudWorkflowMigration {
 		try {
 			cmd = parser.parse(updateWorkflowOptions, args);
 			getCredential(config);
-			updateProductionWorkflow(config, outputDir, cmd);
+			updateProductionWorkflow(config, cmd);
 		} catch (ParseException pex) {
 			// Ignore
 		}
