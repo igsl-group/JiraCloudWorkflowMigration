@@ -240,3 +240,4 @@ Each file contains an array of objects:
     1. This folder contains one `Workflow ([Name]).json` per remapped workflow. 
 1. Update production workflows: `java -jar JiraCloudWorkflowMigration-[version].jar -uw -wd REMAP`. 
     1. This creates a new folder with current timestmap, but no output file will be created inside.
+    1. Note that Jira checks the version data in the JSON; so after each update you need to export again before you can update a second time.

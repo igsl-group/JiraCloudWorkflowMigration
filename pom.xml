@@ -169,7 +169,7 @@
                             <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
                             <addClasspath>true</addClasspath>
                             <classpathPrefix>lib</classpathPrefix>
-                            <mainClass>com.igsl.ConfluenceURLTransform</mainClass>
+                            <mainClass>com.igsl.JiraCloudWorkflowMigration</mainClass>
                         </manifest>
                         <manifestEntries>
                             <Class-Path>.</Class-Path>

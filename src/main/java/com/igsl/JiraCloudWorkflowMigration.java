@@ -600,9 +600,8 @@ public class JiraCloudWorkflowMigration {
 			}
 		});
 	}
-	
-	public static void main(String[] args) throws Exception {
-		Config config = Config.getInstance();
+
+	private static void getCredential(Config config) throws Exception {
 		// Get user
 		if (config.getEmail() == null || config.getEmail().isBlank()) {
 			String email = Console.readLine("User Email: ");
@@ -614,12 +613,17 @@ public class JiraCloudWorkflowMigration {
 			char[] pwd = Console.readPassword("API Token: ");
 			config.setToken(new String(pwd));
 		}	
+	}
+	
+	public static void main(String[] args) throws Exception {
+		Config config = Config.getInstance();
 		CommandLineParser parser = new DefaultParser();
 		CommandLine cmd = null;
 		Path outputDir = Paths.get(SDF.format(new Date()));
 		Files.createDirectories(outputDir);
 		try {
 			cmd = parser.parse(exportSandboxOptions, args);
+			getCredential(config);
 			export(config, config.getSandbox(), outputDir, cmd);
 			exportWorkflow(config, config.getSandbox(), outputDir, cmd);
 		} catch (ParseException pex) {
@@ -627,6 +631,7 @@ public class JiraCloudWorkflowMigration {
 		}
 		try {
 			cmd = parser.parse(exportProductionOptions, args);
+			getCredential(config);
 			export(config, config.getProduction(), outputDir, cmd);
 			exportWorkflow(config, config.getProduction(), outputDir, cmd);
 		} catch (ParseException pex) {
@@ -658,6 +663,7 @@ public class JiraCloudWorkflowMigration {
 		}
 		try {
 			cmd = parser.parse(updateWorkflowOptions, args);
+			getCredential(config);
 			updateProductionWorkflow(config, outputDir, cmd);
 		} catch (ParseException pex) {
 			// Ignore
