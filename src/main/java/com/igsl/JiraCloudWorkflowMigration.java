@@ -358,7 +358,7 @@ public class JiraCloudWorkflowMigration {
 	}
 	
 	private static String getWorkflowFileName(String workflowName) {
-		return "Workflow (" + workflowName.replaceAll("\\W+", " ") + ").json";	
+		return "Workflow - " + workflowName.replaceAll("\\W+", " ") + ".json";	
 	}
 	
 	private static void exportWorkflow(Config config, String host, Path outputDir, CommandLine cmd) 
