@@ -35,6 +35,7 @@ import org.apache.logging.log4j.Logger;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.igsl.model.Model;
 import com.igsl.model.Workflow;
 import com.igsl.rest.Paged;
@@ -52,7 +53,8 @@ public class JiraCloudWorkflowMigration {
 	
 	private static final Logger LOGGER = LogManager.getLogger();
 	private static final SimpleDateFormat SDF = new SimpleDateFormat("yyyyMMdd_HHmmss");
-	private static final ObjectMapper OM = new ObjectMapper();
+	private static final ObjectMapper OM = new ObjectMapper()
+				.enable(SerializationFeature.INDENT_OUTPUT);
 	private static final Configuration JSONPATH_CONFIG_READ_PATH = Configuration.builder()
 			   .options(com.jayway.jsonpath.Option.AS_PATH_LIST)
 			   .build();
@@ -542,7 +544,9 @@ public class JiraCloudWorkflowMigration {
 					// Write to file
 					Path outputFile = outputDir.resolve(path.getFileName());
 					try (FileWriter fw = new FileWriter(outputFile.toFile())) {
-						fw.write(modifiedSource);
+						JsonNode node = OM.readTree(modifiedSource);
+						String output = OM.writeValueAsString(node);
+						fw.write(output);
 						Log.info(LOGGER, "Updated: " + outputFile.toString());
 					}
 				} catch (Exception ex) {
