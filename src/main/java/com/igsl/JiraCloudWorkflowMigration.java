@@ -52,6 +52,7 @@ import com.jayway.jsonpath.PathNotFoundException;
 public class JiraCloudWorkflowMigration {
 	
 	private static final Logger LOGGER = LogManager.getLogger();
+	private static final String NEWLINE = System.getProperty("line.separator");
 	private static final SimpleDateFormat SDF = new SimpleDateFormat("yyyyMMdd_HHmmss");
 	private static final ObjectMapper OM = new ObjectMapper()
 				.enable(SerializationFeature.INDENT_OUTPUT);
@@ -318,6 +319,48 @@ public class JiraCloudWorkflowMigration {
 		);
 	}
 	
+	private static Map<String, String> extractScriptRunScript(String workflowJson) throws Exception {
+		DocumentContext ctx = JsonPath.parse(workflowJson);
+		DocumentContext pathCtx = JsonPath.using(JSONPATH_CONFIG_READ_PATH).parse(workflowJson);
+		return extractScriptRunScript(ctx, pathCtx);		
+	}
+	
+	private static Map<String, String> extractScriptRunScript(DocumentContext ctx, DocumentContext pathCtx) {
+		Map<String, String> result = new HashMap<>();
+		ScriptRunnerCompressedData scd = new ScriptRunnerCompressedData();
+		List<String> paths = new ArrayList<>();
+		try {
+			/*
+			List<String> actions = pathCtx.read("$[*].workflows[*].transitions[*].actions[*]");
+			for (String action : actions) {
+				paths = pathCtx.read(action + ".parameters[?(@.appKey==\"com.onresolve.jira.groovy.groovyrunner__script-postfunction\")]");
+			}
+			*/
+			paths = pathCtx.read("$[*].workflows[*].transitions[*].actions[*].parameters[?(@.appKey==\"com.onresolve.jira.groovy.groovyrunner__script-postfunction\")]");
+		} catch (PathNotFoundException pnfex) {
+			// Log.error(LOGGER, "parameters Path not found", pnfex);
+		}
+		for (String path : paths) {
+			try {
+				String id = ctx.read(path + ".id");
+				String value = ctx.read(path + ".config");
+				String unpacked = scd.unpack(value);
+				JsonNode node = OM.readTree(unpacked);
+				String code = OM.writeValueAsString(node);
+				result.put(id, code);
+			} catch (PathNotFoundException pnfex) {
+				// Log.error(LOGGER, "id/config Path not found", pnfex);
+			} catch (Exception ex) {
+				Log.error(LOGGER, "Error parsing workflow", ex);
+			}
+		}
+		return result;
+	}
+	
+	private static String getWorkflowFileName(String workflowName) {
+		return "Workflow (" + workflowName.replaceAll("\\W+", " ") + ").json";	
+	}
+	
 	private static void exportWorkflow(Config config, String host, Path outputDir, CommandLine cmd) 
 			throws Exception {
 		try {
@@ -346,10 +389,19 @@ public class JiraCloudWorkflowMigration {
 							.payload(payload)
 							.requestAllPages();
 					// Replace characters invalid as filename
-					String name = workflowName.replaceAll("\\W+", " ");				
-					Path outputFile = outputDir.resolve("Workflow (" + name + ").json");
-					OM.writeValue(outputFile.toFile(), wf);
+					String fileName = getWorkflowFileName(workflowName);
+					Path outputFile = outputDir.resolve(fileName);
+					String json = OM.writeValueAsString(wf);
+					Files.writeString(outputFile, json);
 					Log.info(LOGGER, "Saved Workflow: " + workflowName + " to " + outputFile.toString());
+					Map<String, String> codes = extractScriptRunScript(json);
+					for (Map.Entry<String, String> entry : codes.entrySet()) {
+						Path codeFile = outputDir.resolve(
+								getWorkflowFileName(workflowName) + 
+								" - " + entry.getKey() + ".groovy");
+						Files.writeString(codeFile, entry.getValue());
+						Log.info(LOGGER, "Saved ScriptRunner post-function: " + codeFile.toString());
+					}
 					count++;
 				} catch (Exception ex) {
 					Log.error(LOGGER, "Error exporting workflow: " + workflowName, ex);
@@ -389,22 +441,24 @@ public class JiraCloudWorkflowMigration {
 		return map;
 	}
 	
-	private static String remapValue(Path matchDir, MapperEntry mapper, String value) throws Exception {
+	private static String remapValue(Path matchDir, MapperEntry mapper, String jsonPath, String value) 
+			throws Exception {
 		String modelClassName = mapper.getModelClassName();
 		String newValue = value;
-		Log.debug(LOGGER, "Remapping " + modelClassName + " value: " + value);
+		Log.debug(LOGGER, "Remapping " + jsonPath + " " + modelClassName + " value: " + value);
 		Map<String, String> map = loadMap(matchDir, mapper.getModelClassName());
 		if (map.containsKey(newValue)) {
 			newValue = map.get(newValue);
-			Log.debug(LOGGER, "Remapped " + modelClassName + " value to: " + newValue);
+			Log.debug(LOGGER, "Remapped " + jsonPath + " " + modelClassName + " value to: " + newValue);
 		} else {
-			Log.error(LOGGER, "No mapping found for " + modelClassName + " value: " + newValue);
-			throw new Exception("No mapping found for " + modelClassName + " value: " + newValue);
+			Log.error(LOGGER, "No mapping found for " + jsonPath + " " + modelClassName + " value: " + newValue);
+			throw new Exception("No mapping found for " + jsonPath + " " + modelClassName + " value: " + newValue);
 		}
 		return newValue;
 	}
 	
-	private static String processValue(Path matchDir, MapperEntry mapper, String value) throws Exception {
+	private static String processValue(Path matchDir, MapperEntry mapper, String jsonPath, String value) 
+			throws Exception {
 		String modelClassName = mapper.getModelClassName();
 		Log.debug(LOGGER, "Processing " + modelClassName + " value: " + value);
 		ValueProcessor processor = null;
@@ -428,7 +482,7 @@ public class JiraCloudWorkflowMigration {
 			if (mapper.getModelClass() != null) {
 				for (int groupId : groupList) {
 					String groupValue = m.group(groupId);
-					String remappedValue = remapValue(matchDir, mapper, groupValue);
+					String remappedValue = remapValue(matchDir, mapper, jsonPath, groupValue);
 					replacements.put(groupId, remappedValue);
 				}
 			}
@@ -484,7 +538,7 @@ public class JiraCloudWorkflowMigration {
 						// Resolve value
 						String value = valueCtx.read(resolvedPath);
 						Log.debug(LOGGER, "JSON path: " + resolvedPath + " value = " + value);
-						String newValue = processValue(matchDir, mapper, value);
+						String newValue = processValue(matchDir, mapper, resolvedPath, value);
 						Log.debug(LOGGER, "JSON path: " + resolvedPath + " new value = " + newValue);
 						valueCtx.set(resolvedPath, newValue);
 					}
@@ -502,7 +556,7 @@ public class JiraCloudWorkflowMigration {
 						// Resolve value
 						String value = valueCtx.read(resolvedPath);
 						Log.debug(LOGGER, "JSON path: " + resolvedPath + " value = " + value);
-						String newValue = processValue(matchDir, mapper, value);
+						String newValue = processValue(matchDir, mapper, resolvedPath, value);
 						Log.debug(LOGGER, "JSON path: " + resolvedPath + " new value = " + newValue);
 						valueCtx.set(resolvedPath, newValue);
 					}
@@ -518,13 +572,20 @@ public class JiraCloudWorkflowMigration {
 		Path matchDir = Paths.get(cmd.getOptionValue(matchDirectoryOption));
 		PathMatcher pathMatcher = FileSystems.getDefault().getPathMatcher("glob:*.json");
 		MapperConfig mapperConfig = MapperConfig.getInstance();
-		Files.list(sandboxDir).forEach(path -> {
+		int total = 0;
+		int success = 0;
+		List<String> errorWorkflowNames = new ArrayList<>();
+		Iterator<Path> it = Files.list(sandboxDir).iterator();
+		while (it.hasNext()) {
+			Path path = it.next();
 			if (pathMatcher.matches(path.getFileName())) {
+				String workflowName = null;
+				total++;
 				try {
 					String source = Files.readString(path);
 					String modifiedSource = source;
 					JsonNode workflow = OM.readTree(source);
-					String workflowName = workflow.get(0).get("workflows").get(0).get("name").asText();
+					workflowName = workflow.get(0).get("workflows").get(0).get("name").asText();
 					Log.info(LOGGER, "Processing workflow: " + path.toString());
 					// For each mapper
 					for (MapperEntry mapper : mapperConfig.getMappers()) {
@@ -547,13 +608,33 @@ public class JiraCloudWorkflowMigration {
 						JsonNode node = OM.readTree(modifiedSource);
 						String output = OM.writeValueAsString(node);
 						fw.write(output);
+						success++;
 						Log.info(LOGGER, "Updated: " + outputFile.toString());
+						Map<String, String> codes = extractScriptRunScript(output);
+						for (Map.Entry<String, String> entry : codes.entrySet()) {
+							Path codeFile = outputDir.resolve(
+									getWorkflowFileName(workflowName) + 
+									" - " + entry.getKey() + ".groovy");
+							Files.writeString(codeFile, entry.getValue());
+							Log.info(LOGGER, "Saved ScriptRunner post-function: " + codeFile.toString());
+						}
 					}
 				} catch (Exception ex) {
+					if (workflowName != null) {
+						errorWorkflowNames.add(workflowName);
+					}
 					Log.error(LOGGER, "Error processing: " + path.toFile(), ex);
 				}
 			}	// pathMatcher.matches()
-		});
+		}
+		Log.info(LOGGER, "Workflows remapped: " + success + "/" + total);
+		if (errorWorkflowNames.size() != 0) {
+			StringBuilder sb = new StringBuilder();
+			for (String name : errorWorkflowNames) {
+				sb.append(NEWLINE).append(name);
+			}
+			Log.info(LOGGER, "Failed workflows: " + sb.toString());
+		}
 	}
 	
 	private static void scriptRunnerTool(boolean pack, CommandLine cmd) throws Exception {
