@@ -1,6 +1,6 @@
 [
     {
-        "name": "Checklist for Jira Pro Complete Checklist Post-Function",
+        "name": "Checklist for Jira Pro Complete Checklist Post-Function (id)",
         "jsonPaths": [
             "[*]",
             "workflows[*]",
@@ -10,14 +10,32 @@
             "id"
         ],
         "valueProcessorClass": null,
-        "valueRegex": "[a-zA-Z0-9\\-]+",
+        "valueRegex": "07da12a7-c593-4f20-9183-622f49fb7f79",
         "valueCaptureGroups": [],
-        "valueReplacement": "07da12a7-c593-4f20-9183-622f49fb7f79",
+        "valueReplacement": "87113c88-af70-4b11-9789-30fcc3f8356f",
         "modelClass": null,
         "targetWorkflowNames": []
     },
     {
-        "name": "Checklist for Jira Pro Completed Validator",
+        "name": "Checklist for Jira Pro Complete Checklist Post-Function (appKey)",
+        "jsonPaths": [
+            "[*]",
+            "workflows[*]",
+            "transitions[*]",
+            "actions[*]",
+            "parameters[?(@.appKey==\"com.gebsun.plugins.jira.issuechecklist__issue-checklist-check-all-post-function\")]",
+            "appKey"
+        ],
+        "valueProcessorClass": null,
+        "valueRegex": ".+",
+        "valueCaptureGroups": [],
+        "valueReplacement": "com.okapya.jira.checklist__issue-checklist-check-all-post-function",
+        "modelClass": null,
+        "targetWorkflowNames": []
+    },
+    
+    {
+        "name": "Checklist for Jira Pro Completed Validator (id)",
         "jsonPaths": [
             "[*]",
             "workflows[*]",
@@ -29,12 +47,30 @@
         "valueProcessorClass": null,
         "valueRegex": "30cffa8e-2c1d-44bc-a033-3253b943ab75",
         "valueCaptureGroups": [],
-        "valueReplacement": "30cffa8e-2c1d-44bc-a033-3253b943ab75",
+        "valueReplacement": "edf279c1-f080-42dd-9736-e719a72a7895",
         "modelClass": null,
         "targetWorkflowNames": []
     },
     {
-        "name": "Checklist for Jira Pro Mandatory Completed Validator",
+        "name": "Checklist for Jira Pro Completed Validator (appKey)",
+        "jsonPaths": [
+            "[*]",
+            "workflows[*]",
+            "transitions[*]",
+            "actions[*]",
+            "parameters[?(@.appKey==\"com.gebsun.plugins.jira.issuechecklist__issue-checklist-completed-workflow-validator\")]",
+            "appKey"
+        ],
+        "valueProcessorClass": null,
+        "valueRegex": ".+",
+        "valueCaptureGroups": [],
+        "valueReplacement": "com.okapya.jira.checklist__issue-checklist-completed-workflow-validator",
+        "modelClass": null,
+        "targetWorkflowNames": []
+    },
+    
+    {
+        "name": "Checklist for Jira Pro Mandatory Completed Validator (id)",
         "jsonPaths": [
             "[*]",
             "workflows[*]",
@@ -46,12 +82,30 @@
         "valueProcessorClass": null,
         "valueRegex": "505fc2a2-046a-4dc0-8c50-fc0cea964b18",
         "valueCaptureGroups": [],
-        "valueReplacement": "505fc2a2-046a-4dc0-8c50-fc0cea964b18",
+        "valueReplacement": "13ab68e8-1f4c-48a7-85bc-4b09a6833165",
         "modelClass": null,
         "targetWorkflowNames": []
     },
     {
-        "name": "Checklist for Jira Pro Mandatory Not Empty Validator",
+        "name": "Checklist for Jira Pro Mandatory Completed Validator (appKey)",
+        "jsonPaths": [
+            "[*]",
+            "workflows[*]",
+            "transitions[*]",
+            "actions[*]",
+            "parameters[?(@.appKey==\"com.gebsun.plugins.jira.issuechecklist__issue-checklist-mandatory-items-completed-workflow-validator\")]",
+            "appKey"
+        ],
+        "valueProcessorClass": null,
+        "valueRegex": ".+",
+        "valueCaptureGroups": [],
+        "valueReplacement": "com.okapya.jira.checklist__issue-checklist-mandatory-items-completed-workflow-validator",
+        "modelClass": null,
+        "targetWorkflowNames": []
+    },
+    
+    {
+        "name": "Checklist for Jira Pro Mandatory Not Empty Validator (id)",
         "jsonPaths": [
             "[*]",
             "workflows[*]",
@@ -63,7 +117,24 @@
         "valueProcessorClass": null,
         "valueRegex": "31f377d7-7077-4a3b-a7cc-7f213d4ec47b",
         "valueCaptureGroups": [],
-        "valueReplacement": "31f377d7-7077-4a3b-a7cc-7f213d4ec47b",
+        "valueReplacement": "58fb7316-84ad-4aca-adef-f1ea4df89312",
+        "modelClass": null,
+        "targetWorkflowNames": []
+    },
+    {
+        "name": "Checklist for Jira Pro Mandatory Not Empty Validator (appKey)",
+        "jsonPaths": [
+            "[*]",
+            "workflows[*]",
+            "transitions[*]",
+            "actions[*]",
+            "parameters[?(@.appKey==\"com.gebsun.plugins.jira.issuechecklist__issue-checklist-not-empty-workflow-validator\")]",
+            "appKey"
+        ],
+        "valueProcessorClass": null,
+        "valueRegex": ".+",
+        "valueCaptureGroups": [],
+        "valueReplacement": "com.okapya.jira.checklist__issue-checklist-not-empty-workflow-validator",
         "modelClass": null,
         "targetWorkflowNames": []
     }
