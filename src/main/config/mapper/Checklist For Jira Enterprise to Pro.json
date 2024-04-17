@@ -40,7 +40,7 @@
             "[*]",
             "workflows[*]",
             "transitions[*]",
-            "actions[*]",
+            "validators[*]",
             "parameters[?(@.appKey==\"com.okapya.jira.checklist__issue-checklist-completed-workflow-validator\")]",
             "id"
         ],
@@ -57,7 +57,7 @@
             "[*]",
             "workflows[*]",
             "transitions[*]",
-            "actions[*]",
+            "validators[*]",
             "parameters[?(@.appKey==\"com.okapya.jira.checklist__issue-checklist-completed-workflow-validator\")]",
             "appKey"
         ],
@@ -75,7 +75,7 @@
             "[*]",
             "workflows[*]",
             "transitions[*]",
-            "actions[*]",
+            "validators[*]",
             "parameters[?(@.appKey==\"com.okapya.jira.checklist__issue-checklist-mandatory-items-completed-workflow-validator\")]",
             "id"
         ],
@@ -92,7 +92,7 @@
             "[*]",
             "workflows[*]",
             "transitions[*]",
-            "actions[*]",
+            "validators[*]",
             "parameters[?(@.appKey==\"com.okapya.jira.checklist__issue-checklist-mandatory-items-completed-workflow-validator\")]",
             "appKey"
         ],
@@ -110,7 +110,7 @@
             "[*]",
             "workflows[*]",
             "transitions[*]",
-            "actions[*]",
+            "validators[*]",
             "parameters[?(@.appKey==\"com.okapya.jira.checklist__issue-checklist-not-empty-workflow-validator\")]",
             "id"
         ],
@@ -127,7 +127,7 @@
             "[*]",
             "workflows[*]",
             "transitions[*]",
-            "actions[*]",
+            "validators[*]",
             "parameters[?(@.appKey==\"com.okapya.jira.checklist__issue-checklist-not-empty-workflow-validator\")]",
             "appKey"
         ],

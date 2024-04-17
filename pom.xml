@@ -161,6 +161,9 @@
                 <configuration>
                     <excludes>
                         <exclude>mapper</exclude>
+                        <exclude>mapper/*</exclude>
+                        <exclude>mapperDisabled</exclude>
+                        <exclude>mapperDisabled/*</exclude>
                         <exclude>Config.json</exclude>
                         <exclude>log4j2.xml</exclude>
                     </excludes>

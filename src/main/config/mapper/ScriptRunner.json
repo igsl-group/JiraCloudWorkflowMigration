@@ -22,7 +22,7 @@
             "[*]",
             "workflows[*]",
             "transitions[*]",
-            "actions[*]",
+            "validators[*]",
             "parameters[?(@.appKey==\"com.onresolve.jira.groovy.groovyrunner__script-workflow-validators\")]",
             "config"
         ],
@@ -39,7 +39,8 @@
             "[*]",
             "workflows[*]",
             "transitions[*]",
-            "actions[*]",
+            "conditions",
+            "conditions[*]",
             "parameters[?(@.appKey==\"com.onresolve.jira.groovy.groovyrunner__script-workflow-conditions\")]",
             "config"
         ],
