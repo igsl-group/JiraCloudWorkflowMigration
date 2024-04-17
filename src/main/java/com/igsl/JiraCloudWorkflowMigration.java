@@ -511,18 +511,28 @@ public class JiraCloudWorkflowMigration {
 		return newValue;
 	}
 	
-	private static String processJsonPath(Path matchDir, MapperEntry mapper, String jsonString) throws Exception {
+	private static class ProcessJsonResult {
+		public String value;
+		public int count;
+		public ProcessJsonResult(String value, int count) {
+			this.value = value;
+			this.count = count;
+		}
+	}
+	
+	private static ProcessJsonResult processJsonPath(Path matchDir, MapperEntry mapper, String jsonString) throws Exception {
 		// Create both value and path DocumentContext
 		DocumentContext pathCtx = JsonPath.using(JSONPATH_CONFIG_READ_PATH).parse(jsonString);
 		DocumentContext valueCtx = JsonPath.parse(jsonString);
-		processJsonPath(valueCtx, pathCtx, matchDir, mapper, 0, "$");
-		return valueCtx.jsonString();
+		int count = processJsonPath(valueCtx, pathCtx, matchDir, mapper, 0, "$");
+		return new ProcessJsonResult(valueCtx.jsonString(), count);
 	}
 	
-	private static void processJsonPath(
+	private static int processJsonPath(
 			DocumentContext valueCtx, DocumentContext pathCtx, 
 			Path matchDir, 
 			MapperEntry mapper, int pathIndex, String path) throws Exception {
+		int count = 0;
 		String currentPath = mapper.getJsonPaths().get(pathIndex);
 		Log.debug(LOGGER, "JSON path: " + path + "." + currentPath);
 		boolean hasMorePaths = (pathIndex + 1) < mapper.getJsonPaths().size();
@@ -533,14 +543,17 @@ public class JiraCloudWorkflowMigration {
 				for (String resolvedPath : resolvedPaths) {
 					if (hasMorePaths) {
 						// Drill deeper
-						processJsonPath(valueCtx, pathCtx, matchDir, mapper, pathIndex + 1, resolvedPath);
+						count += processJsonPath(valueCtx, pathCtx, matchDir, mapper, pathIndex + 1, resolvedPath);
 					} else {
 						// Resolve value
 						String value = valueCtx.read(resolvedPath);
 						Log.debug(LOGGER, "JSON path: " + resolvedPath + " value = " + value);
 						String newValue = processValue(matchDir, mapper, resolvedPath, value);
 						Log.debug(LOGGER, "JSON path: " + resolvedPath + " new value = " + newValue);
-						valueCtx.set(resolvedPath, newValue);
+						if (!value.equals(newValue)) {
+							valueCtx.set(resolvedPath, newValue);
+							count++;
+						}
 					}
 				}
 			} catch (PathNotFoundException pnfex) {
@@ -551,20 +564,24 @@ public class JiraCloudWorkflowMigration {
 				List<String> resolvedPaths = pathCtx.read(path + "." + currentPath);
 				for (String resolvedPath : resolvedPaths) {
 					if (hasMorePaths) {
-						processJsonPath(valueCtx, pathCtx, matchDir, mapper, pathIndex + 1, resolvedPath);
+						count += processJsonPath(valueCtx, pathCtx, matchDir, mapper, pathIndex + 1, resolvedPath);
 					} else {
 						// Resolve value
 						String value = valueCtx.read(resolvedPath);
 						Log.debug(LOGGER, "JSON path: " + resolvedPath + " value = " + value);
 						String newValue = processValue(matchDir, mapper, resolvedPath, value);
 						Log.debug(LOGGER, "JSON path: " + resolvedPath + " new value = " + newValue);
-						valueCtx.set(resolvedPath, newValue);
+						if (!value.equals(newValue)) {
+							valueCtx.set(resolvedPath, newValue);
+							count++;
+						}
 					}
 				}
 			} catch (PathNotFoundException pnfex) {
 				// Ignore
 			}
 		}
+		return count;
 	}
 	
 	private static void remapSandboxWorkflow(Config config, Path outputDir, CommandLine cmd) throws Exception {
@@ -584,6 +601,7 @@ public class JiraCloudWorkflowMigration {
 				try {
 					String source = Files.readString(path);
 					String modifiedSource = source;
+					int modifiedCount = 0;
 					JsonNode workflow = OM.readTree(source);
 					workflowName = workflow.get(0).get("workflows").get(0).get("name").asText();
 					Log.info(LOGGER, "Processing workflow: " + path.toString());
@@ -594,13 +612,15 @@ public class JiraCloudWorkflowMigration {
 						if (targetWorkflowNames.size() != 0 && 
 							!targetWorkflowNames.contains(workflowName)) {
 							// Skip this mapper
-							Log.info(LOGGER, 
+							Log.debug(LOGGER, 
 									"Mapper: " + mapper.getName() + 
 									" does not apply to workflow " + workflowName);
 							continue;
 						}
-						Log.info(LOGGER, "Mapper: " + mapper.getName() + " processing file: " + path);
-						modifiedSource = processJsonPath(matchDir, mapper, modifiedSource);
+						Log.debug(LOGGER, "Mapper: " + mapper.getName() + " processing file: " + path);
+						ProcessJsonResult result = processJsonPath(matchDir, mapper, modifiedSource);
+						modifiedSource = result.value;
+						modifiedCount += result.count;
 					}	// For all mappers
 					// Write to file
 					Path outputFile = outputDir.resolve(path.getFileName());
@@ -609,7 +629,7 @@ public class JiraCloudWorkflowMigration {
 						String output = OM.writeValueAsString(node);
 						fw.write(output);
 						success++;
-						Log.info(LOGGER, "Updated: " + outputFile.toString());
+						Log.info(LOGGER, "Updated: " + outputFile.toString() + " with " + modifiedCount + " change(s)");
 						Map<String, String> codes = extractScriptRunScript(output);
 						for (Map.Entry<String, String> entry : codes.entrySet()) {
 							Path codeFile = outputDir.resolve(
