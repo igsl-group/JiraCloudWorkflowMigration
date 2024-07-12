@@ -26,7 +26,7 @@
             "parameters[?(@.appKey==\"com.onresolve.jira.groovy.groovyrunner__script-workflow-validators\")]",
             "config"
         ],
-        "valueProcessorClass": "com.igsl.workflow.preprocessor.ScriptRunnerCompressedData",
+        "valueProcessorClass": null,
         "valueRegex": "customfield_[0-9]+",
         "valueCaptureGroups": [],
         "valueReplacement": null,

@@ -2,6 +2,7 @@ package com.igsl;
 
 import java.io.FileReader;
 import java.io.FileWriter;
+import java.net.http.HttpResponse;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -19,6 +20,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 
 import javax.ws.rs.HttpMethod;
+import javax.ws.rs.core.Response;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -30,6 +32,7 @@ import org.apache.commons.cli.ParseException;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.csv.CSVRecord;
+import org.apache.http.HttpStatus;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -67,25 +70,25 @@ public class JiraCloudWorkflowMigration {
 	private static final String MATCH_WITH = "MATCH_WITH";
 	private static final String DELIMITER = "|";
 	
-	private static Option sandboxDirectoryOption;
-	private static Option productionDirectoryOption;
-	private static Option matchDirectoryOption;
+	private static Option emailOption;
+	private static Option tokenOption;
 	
-	private static Options exportSandboxOptions;
-	private static Option exportSandboxOption;
+	private static Option targetHostOption;
+	private static Option sourceDirOption;
+	private static Option targetDirOption;
+	private static Option matchDirOption;
 	
-	private static Options exportProductionOptions;
-	private static Option exportProductionOption;
+	private static Options exportOptions;
+	private static Option exportOption;
 	
 	private static Options matchOptions;
 	private static Option matchOption;
 	
-	private static Options remapSandboxWorkflowOptions;
-	private static Option remapSandboxWorkflowOption;
+	private static Options remapWorkflowOptions;
+	private static Option remapWorkflowOption;
 	
 	private static Options updateWorkflowOptions;
 	private static Option updateWorkflowOption;
-	private static Option workflowDirectoryOption;
 	
 	private static Option unpackOption;
 	private static Option packOption;
@@ -94,34 +97,83 @@ public class JiraCloudWorkflowMigration {
 	private static Options packOptions;
 	
 	static {
+		emailOption = Option.builder()
+				.desc("User email")
+				.argName("User email")
+				.option("u")
+				.longOpt("user")
+				.required()
+				.hasArg()
+				.build();
+		tokenOption = Option.builder()
+				.desc("API token")
+				.argName("API token")
+				.option("p")
+				.longOpt("apitoken")
+				.hasArg()
+				.build();
+		
+		targetHostOption = Option.builder()
+				.desc("Target site")
+				.argName("Target site")
+				.option("t")
+				.longOpt("target")
+				.required()
+				.hasArg()
+				.build();
+		
+		sourceDirOption = Option.builder()
+				.argName("Directory")
+				.desc("Directory containing objects exported from source site")
+				.option("sd")
+				.longOpt("sourcedir")
+				.required()
+				.hasArg()
+				.build();
+		targetDirOption = Option.builder()
+				.argName("Directory")
+				.desc("Directory containing objects exported from target site")
+				.option("td")
+				.longOpt("targetdir")
+				.required()
+				.hasArg()
+				.build();
+		matchDirOption = Option.builder()
+				.argName("Directory")
+				.desc("Directory containing result from match")
+				.option("md")
+				.longOpt("matchdir")
+				.hasArg()
+				.required()
+				.build();
+
+		// Update workflow on site using directory
 		updateWorkflowOption = Option.builder()
-				.argName("Update workflow")
+				.desc("Update workflow in target site")
 				.option("uw")
 				.longOpt("updateworkflow")
 				.required()
 				.build();
-		workflowDirectoryOption = Option.builder()
-				.argName("Modified workflow directory")
-				.option("wd")
-				.longOpt("workflowdirectory")
-				.hasArg()
-				.required()
-				.build();
 		updateWorkflowOptions = new Options()
 				.addOption(updateWorkflowOption)
-				.addOption(workflowDirectoryOption);
-		
+				.addOption(targetHostOption)
+				.addOption(sourceDirOption)
+				.addOption(emailOption)
+				.addOption(tokenOption);
+				
+		// For pack/unpack ScriptRunner scripts
 		unpackOption = Option.builder()
-				.argName("Unpack ScriptRunner script")
+				.desc("Unpack ScriptRunner script")
 				.option("u")
 				.longOpt("unpack")
 				.build();
 		packOption = Option.builder()
-				.argName("Package ScriptRunner script")
+				.desc("Package ScriptRunner script")
 				.option("p")
 				.longOpt("pack")
 				.build();
 		scriptOption = Option.builder()
+				.desc("Script value")
 				.argName("Script value")
 				.option("s")
 				.longOpt("script")
@@ -135,67 +187,42 @@ public class JiraCloudWorkflowMigration {
 				.addOption(packOption)
 				.addOption(scriptOption);		
 		
-		matchDirectoryOption = Option.builder()
-				.argName("Match directory")
-				.option("md")
-				.longOpt("matchdir")
-				.hasArg()
-				.required()
-				.build();
-		sandboxDirectoryOption = Option.builder()
-				.argName("Sandbox objects directory")
-				.option("sd")
-				.longOpt("sandboxdir")
-				.hasArg()
-				.required()
-				.build();
-		productionDirectoryOption = Option.builder()
-				.argName("Production objects directory")
-				.option("pd")
-				.longOpt("productiondir")
-				.hasArg()
-				.required()
-				.build();
-		
-		remapSandboxWorkflowOption = Option.builder()
-				.argName("Remap sandbox workflows")
-				.option("rw")
-				.longOpt("remapworkflow")
-				.required()
-				.build();
-		remapSandboxWorkflowOptions = new Options()
-				.addOption(remapSandboxWorkflowOption)
-				.addOption(matchDirectoryOption)
-				.addOption(sandboxDirectoryOption);
-		
+		// Match objects exported from two sites
 		matchOption = Option.builder()
-				.argName("Match sandbox and production objects")
+				.argName("Match objects between two sites")
 				.option("m")
 				.longOpt("match")
 				.required()
 				.build();
 		matchOptions = new Options()
 				.addOption(matchOption)
-				.addOption(productionDirectoryOption)
-				.addOption(sandboxDirectoryOption);
+				.addOption(sourceDirOption)
+				.addOption(targetDirOption);
 		
-		exportSandboxOption = Option.builder()
-				.argName("Export sandbox objects")
-				.option("es")
-				.longOpt("exportsandbox")
+		// Remap workflow content
+		remapWorkflowOption = Option.builder()
+				.argName("Remap workflows")
+				.option("rw")
+				.longOpt("remapworkflow")
 				.required()
 				.build();
-		exportSandboxOptions = new Options()
-				.addOption(exportSandboxOption);
-		
-		exportProductionOption = Option.builder()
-				.argName("Export production objects")
-				.option("ep")
-				.longOpt("exportproduction")
+		remapWorkflowOptions = new Options()
+				.addOption(remapWorkflowOption)
+				.addOption(matchDirOption)
+				.addOption(sourceDirOption);
+
+		// Export objects
+		exportOption = Option.builder()
+				.argName("Export objects from site")
+				.option("e")
+				.longOpt("export")
 				.required()
 				.build();
-		exportProductionOptions = new Options()
-				.addOption(exportProductionOption);
+		exportOptions = new Options()
+				.addOption(targetHostOption)
+				.addOption(exportOption)
+				.addOption(emailOption)
+				.addOption(tokenOption);
 	}
 	
 	private static Path getObjectFileName(Path folder, String modelClass) {
@@ -236,17 +263,17 @@ public class JiraCloudWorkflowMigration {
 	}
 	
 	private static void match(Config config, Path outputDir, CommandLine cmd) throws Exception {
-		String sandboxDir = cmd.getOptionValue(sandboxDirectoryOption);
-		Path sandbox = Paths.get(sandboxDir);
-		String productionDir = cmd.getOptionValue(productionDirectoryOption);
-		Path production = Paths.get(productionDir);
+		String sourceDir = cmd.getOptionValue(sourceDirOption);
+		Path source = Paths.get(sourceDir);
+		String targetDir = cmd.getOptionValue(targetDirOption);
+		Path target = Paths.get(targetDir);
 		String packageName = config.getObjectTypePackage();
 		for (String className : config.getObjectTypes()) {
 			Class<?> cls = Class.forName(packageName + "." + className);
 			Model<?> model = (Model<?>) cls.getConstructor().newInstance();
 			// Read sandbox into map of identifier to Model
 			Map<String, Model<?>> sandboxMap = new HashMap<>();
-			try (	FileReader fr = new FileReader(getObjectFileName(sandbox, className).toFile()); 
+			try (	FileReader fr = new FileReader(getObjectFileName(source, className).toFile()); 
 					CSVParser parser = new CSVParser(fr, CSV.getCSVReadFormat())) {
 				for (CSVRecord record : parser.getRecords()) {
 					Model<?> m = (Model<?>) cls.getConstructor().newInstance();
@@ -258,7 +285,7 @@ public class JiraCloudWorkflowMigration {
 			}
 			// Read production into map of unique name to list of models sharing same unique name
 			Map<String, List<Model<?>>> productionMap = new HashMap<>();
-			try (	FileReader fr = new FileReader(getObjectFileName(production, className).toFile()); 
+			try (	FileReader fr = new FileReader(getObjectFileName(target, className).toFile()); 
 					CSVParser parser = new CSVParser(fr, CSV.getCSVReadFormat())) {
 				for (CSVRecord record : parser.getRecords()) {
 					Model<?> m = (Model<?>) cls.getConstructor().newInstance();
@@ -304,7 +331,7 @@ public class JiraCloudWorkflowMigration {
 							v.add(sb.toString());
 						}
 					} else {
-						// Sandbox item is not matched
+						// Source item is not matched
 						v.add(MATCH_RESULT_NO_MATCH);
 						v.add("");
 					}
@@ -414,7 +441,7 @@ public class JiraCloudWorkflowMigration {
 	}
 	
 	// Cache of mappings
-	private static int MAP_SIZE = 10;	// Max. no. of maps to keep in mapCache, FIFO
+	private static int MAP_SIZE = 20;	// Max. no. of maps to keep in mapCache, FIFO
 	private static Map<String, Map<String, String>> mapCache = new LinkedHashMap<>(MAP_SIZE);
 	private static Map<String, String> loadMap(Path matchDir, String modelClass) throws Exception {
 		if (mapCache.containsKey(modelClass)) {
@@ -444,15 +471,25 @@ public class JiraCloudWorkflowMigration {
 	private static String remapValue(Path matchDir, MapperEntry mapper, String jsonPath, String value) 
 			throws Exception {
 		String modelClassName = mapper.getModelClassName();
+		String mapperName = mapper.getName();
 		String newValue = value;
 		Log.debug(LOGGER, "Remapping " + jsonPath + " " + modelClassName + " value: " + value);
 		Map<String, String> map = loadMap(matchDir, mapper.getModelClassName());
-		if (map.containsKey(newValue)) {
-			newValue = map.get(newValue);
-			Log.debug(LOGGER, "Remapped " + jsonPath + " " + modelClassName + " value to: " + newValue);
+		if (map.containsKey(value)) {
+			newValue = map.get(value);
+			Log.debug(LOGGER, 
+					"Remapped: " + jsonPath + 
+					" Mapper: " + mapperName + 
+					" Model: " + modelClassName + 
+					" Value from: " + value + 
+					" Value to: " + newValue);
 		} else {
-			Log.error(LOGGER, "No mapping found for " + jsonPath + " " + modelClassName + " value: " + newValue);
-			throw new Exception("No mapping found for " + jsonPath + " " + modelClassName + " value: " + newValue);
+			Log.warn(LOGGER, 
+					"No mapping found for: " + jsonPath + 
+					" Mapper: " + mapperName + 
+					" Model: " + modelClassName + 
+					" Value: " + value);
+			throw new MappingNotFoundException(jsonPath, mapperName, modelClassName, value);
 		}
 		return newValue;
 	}
@@ -478,12 +515,49 @@ public class JiraCloudWorkflowMigration {
 			if (groupList.size() == 0) {
 				groupList.add(0);
 			}
+			String split = mapper.getSplitRegex();
+			String quote = mapper.getQuote();
 			Map<Integer, String> replacements = new HashMap<>();
 			if (mapper.getModelClass() != null) {
 				for (int groupId : groupList) {
 					String groupValue = m.group(groupId);
-					String remappedValue = remapValue(matchDir, mapper, jsonPath, groupValue);
-					replacements.put(groupId, remappedValue);
+					if (groupValue != null) {
+						if (split != null) {
+							String[] values = groupValue.split(split);
+							StringBuilder remappedValues = new StringBuilder();
+							for (String v : values) {
+								boolean dequoted = false;
+								if (quote != null) {
+									if (v.startsWith(quote) && v.endsWith(quote)) {
+										v = v.substring(
+												quote.length(), v.length() - quote.length());
+										dequoted = true;
+									}
+								}
+								String remapped = remapValue(matchDir, mapper, jsonPath, v);
+								if (quote != null && dequoted) {
+									remapped = quote + remapped + quote;
+								}
+								remappedValues.append(split).append(remapped);
+							}
+							remappedValues.delete(0, split.length());
+							replacements.put(groupId, remappedValues.toString());
+						} else {
+							boolean dequoted = false;
+							if (quote != null) {
+								if (groupValue.startsWith(quote) && groupValue.endsWith(quote)) {
+									groupValue = groupValue.substring(
+											quote.length(), groupValue.length() - quote.length());
+									dequoted = true;
+								}
+							}
+							String remappedValue = remapValue(matchDir, mapper, jsonPath, groupValue);
+							if (quote != null && dequoted) {
+								remappedValue = quote + remappedValue + quote;
+							}
+							replacements.put(groupId, remappedValue);
+						}
+					}
 				}
 			}
 			String replacement = mapper.getValueReplacement();
@@ -513,10 +587,12 @@ public class JiraCloudWorkflowMigration {
 	
 	private static class ProcessJsonResult {
 		public String value;
-		public int count;
-		public ProcessJsonResult(String value, int count) {
+		public int updated;
+		public int notFound;
+		public ProcessJsonResult(String value, int updated, int notFound) {
 			this.value = value;
-			this.count = count;
+			this.updated = updated;
+			this.notFound = notFound;
 		}
 	}
 	
@@ -524,17 +600,17 @@ public class JiraCloudWorkflowMigration {
 		// Create both value and path DocumentContext
 		DocumentContext pathCtx = JsonPath.using(JSONPATH_CONFIG_READ_PATH).parse(jsonString);
 		DocumentContext valueCtx = JsonPath.parse(jsonString);
-		int count = processJsonPath(valueCtx, pathCtx, matchDir, mapper, 0, "$");
-		return new ProcessJsonResult(valueCtx.jsonString(), count);
+		MappingResult count = processJsonPath(valueCtx, pathCtx, matchDir, mapper, 0, "$");
+		return new ProcessJsonResult(valueCtx.jsonString(), count.getChangedCount(), count.getMappingNotFoundCount());
 	}
 	
-	private static int processJsonPath(
+	private static MappingResult processJsonPath(
 			DocumentContext valueCtx, DocumentContext pathCtx, 
 			Path matchDir, 
 			MapperEntry mapper, int pathIndex, String path) throws Exception {
-		int count = 0;
+		MappingResult result = new MappingResult();
 		String currentPath = mapper.getJsonPaths().get(pathIndex);
-		Log.debug(LOGGER, "JSON path: " + path + "." + currentPath);
+		Log.trace(LOGGER, "JSON path: " + path + "." + currentPath);
 		boolean hasMorePaths = (pathIndex + 1) < mapper.getJsonPaths().size();
 		if (currentPath.endsWith("[*]")) {
 			// Resolve path
@@ -543,16 +619,23 @@ public class JiraCloudWorkflowMigration {
 				for (String resolvedPath : resolvedPaths) {
 					if (hasMorePaths) {
 						// Drill deeper
-						count += processJsonPath(valueCtx, pathCtx, matchDir, mapper, pathIndex + 1, resolvedPath);
+						result.add(processJsonPath(
+								valueCtx, pathCtx, matchDir, mapper, pathIndex + 1, resolvedPath));
 					} else {
 						// Resolve value
 						String value = valueCtx.read(resolvedPath);
-						Log.debug(LOGGER, "JSON path: " + resolvedPath + " value = " + value);
-						String newValue = processValue(matchDir, mapper, resolvedPath, value);
-						Log.debug(LOGGER, "JSON path: " + resolvedPath + " new value = " + newValue);
-						if (!value.equals(newValue)) {
-							valueCtx.set(resolvedPath, newValue);
-							count++;
+						Log.trace(LOGGER, "JSON path: " + resolvedPath + " value = " + value);
+						try {
+							String newValue = processValue(matchDir, mapper, resolvedPath, value);
+							Log.trace(LOGGER, "JSON path: " + resolvedPath + " new value = " + newValue);
+							if (!value.equals(newValue)) {
+								valueCtx.set(resolvedPath, newValue);
+								result.addChanged();
+							}
+						} catch (MappingNotFoundException mnfex) {
+							Log.trace(LOGGER, 
+									"JSON path: " + resolvedPath + " value = " + value + " Mapping not found");
+							result.addMappingNotFound();
 						}
 					}
 				}
@@ -564,16 +647,23 @@ public class JiraCloudWorkflowMigration {
 				List<String> resolvedPaths = pathCtx.read(path + "." + currentPath);
 				for (String resolvedPath : resolvedPaths) {
 					if (hasMorePaths) {
-						count += processJsonPath(valueCtx, pathCtx, matchDir, mapper, pathIndex + 1, resolvedPath);
+						result.add(processJsonPath(
+								valueCtx, pathCtx, matchDir, mapper, pathIndex + 1, resolvedPath));
 					} else {
 						// Resolve value
 						String value = valueCtx.read(resolvedPath);
 						Log.debug(LOGGER, "JSON path: " + resolvedPath + " value = " + value);
-						String newValue = processValue(matchDir, mapper, resolvedPath, value);
-						Log.debug(LOGGER, "JSON path: " + resolvedPath + " new value = " + newValue);
-						if (!value.equals(newValue)) {
-							valueCtx.set(resolvedPath, newValue);
-							count++;
+						try {
+							String newValue = processValue(matchDir, mapper, resolvedPath, value);
+							Log.debug(LOGGER, "JSON path: " + resolvedPath + " new value = " + newValue);
+							if (!value.equals(newValue)) {
+								valueCtx.set(resolvedPath, newValue);
+								result.addChanged();
+							}
+						} catch (MappingNotFoundException mnfex) {
+							Log.trace(LOGGER, 
+									"JSON path: " + resolvedPath + " value = " + value + " Mapping not found");
+							result.addMappingNotFound();
 						}
 					}
 				}
@@ -581,18 +671,18 @@ public class JiraCloudWorkflowMigration {
 				// Ignore
 			}
 		}
-		return count;
+		return result;
 	}
 	
-	private static void remapSandboxWorkflow(Config config, Path outputDir, CommandLine cmd) throws Exception {
-		Path sandboxDir = Paths.get(cmd.getOptionValue(sandboxDirectoryOption));
-		Path matchDir = Paths.get(cmd.getOptionValue(matchDirectoryOption));
+	private static void remapWorkflow(Config config, Path outputDir, CommandLine cmd) throws Exception {
+		Path sourceDir = Paths.get(cmd.getOptionValue(sourceDirOption));
+		Path matchDir = Paths.get(cmd.getOptionValue(matchDirOption));
 		PathMatcher pathMatcher = FileSystems.getDefault().getPathMatcher("glob:*.json");
 		MapperConfig mapperConfig = MapperConfig.getInstance();
 		int total = 0;
 		int success = 0;
 		List<String> errorWorkflowNames = new ArrayList<>();
-		Iterator<Path> it = Files.list(sandboxDir).iterator();
+		Iterator<Path> it = Files.list(sourceDir).iterator();
 		while (it.hasNext()) {
 			Path path = it.next();
 			if (pathMatcher.matches(path.getFileName())) {
@@ -602,9 +692,10 @@ public class JiraCloudWorkflowMigration {
 					String source = Files.readString(path);
 					String modifiedSource = source;
 					int modifiedCount = 0;
+					int notFoundCount = 0;
 					JsonNode workflow = OM.readTree(source);
 					workflowName = workflow.get(0).get("workflows").get(0).get("name").asText();
-					Log.info(LOGGER, "Processing workflow: " + path.toString());
+					Log.debug(LOGGER, "Processing workflow: " + path.toString());
 					// For each mapper
 					for (MapperEntry mapper : mapperConfig.getMappers()) {
 						// Check workflow name
@@ -620,7 +711,8 @@ public class JiraCloudWorkflowMigration {
 						Log.debug(LOGGER, "Mapper: " + mapper.getName() + " processing file: " + path);
 						ProcessJsonResult result = processJsonPath(matchDir, mapper, modifiedSource);
 						modifiedSource = result.value;
-						modifiedCount += result.count;
+						modifiedCount += result.updated;
+						notFoundCount += result.notFound;
 					}	// For all mappers
 					// Write to file
 					Path outputFile = outputDir.resolve(path.getFileName());
@@ -629,21 +721,28 @@ public class JiraCloudWorkflowMigration {
 						String output = OM.writeValueAsString(node);
 						fw.write(output);
 						success++;
-						Log.info(LOGGER, "Updated: " + outputFile.toString() + " with " + modifiedCount + " change(s)");
+						if (modifiedCount > 0) {
+							Log.info(LOGGER, 
+									"Updated: " + outputFile.toString() + NEWLINE + 
+									"\t" + modifiedCount + " change(s)" + NEWLINE + 
+									"\t" + notFoundCount + " mapping(s) not found");
+						} else {
+							Log.info(LOGGER, "No change: " + outputFile.toString());
+						}
 						Map<String, String> codes = extractScriptRunScript(output);
 						for (Map.Entry<String, String> entry : codes.entrySet()) {
 							Path codeFile = outputDir.resolve(
 									getWorkflowFileName(workflowName) + 
 									" - " + entry.getKey() + ".groovy");
 							Files.writeString(codeFile, entry.getValue());
-							Log.info(LOGGER, "Saved ScriptRunner post-function: " + codeFile.toString());
+							Log.info(LOGGER, "\tSaved ScriptRunner post-function: " + codeFile.toString());
 						}
 					}
 				} catch (Exception ex) {
 					if (workflowName != null) {
 						errorWorkflowNames.add(workflowName);
 					}
-					Log.error(LOGGER, "Error processing: " + path.toFile(), ex);
+					Log.error(LOGGER, "Error: " + path.toFile(), ex);
 				}
 			}	// pathMatcher.matches()
 		}
@@ -653,7 +752,7 @@ public class JiraCloudWorkflowMigration {
 			for (String name : errorWorkflowNames) {
 				sb.append(NEWLINE).append(name);
 			}
-			Log.info(LOGGER, "Failed workflows: " + sb.toString());
+			Log.info(LOGGER, "Error in " + errorWorkflowNames.size() + " workflows: " + sb.toString());
 		}
 	}
 	
@@ -670,9 +769,9 @@ public class JiraCloudWorkflowMigration {
 		Log.info(LOGGER, "To: " + newValue);
 	}
 	
-	private static void updateProductionWorkflow(Config config, CommandLine cmd) 
+	private static void updateWorkflow(Config config, String host, CommandLine cmd) 
 			throws Exception {
-		Path workflowDir = Paths.get(cmd.getOptionValue(workflowDirectoryOption));
+		Path workflowDir = Paths.get(cmd.getOptionValue(sourceDirOption));
 		PathMatcher pathMatcher = FileSystems.getDefault().getPathMatcher("glob:{**/*.json,*.json}");
 		int total = 0;
 		int success = 0;
@@ -684,12 +783,14 @@ public class JiraCloudWorkflowMigration {
 				try {
 					JsonNode node = OM.readTree(Files.readString(path));
 					String workflowName = node.get(0).get("workflows").get(0).get("name").asText();
+					String workflowId = node.get(0).get("workflows").get(0).get("id").asText();
 					// Validate
 					Map<String, Object> payload = new HashMap<>();
 					payload.put("payload", node.get(0));
+					// Validate
 					RestUtil.getInstance(Object.class)
 						.config(config)
-						.host(config.getProduction())
+						.host(host)
 						.path("/rest/api/3/workflows/update/validation")
 						.method(HttpMethod.POST)
 						.payload(payload)
@@ -697,12 +798,13 @@ public class JiraCloudWorkflowMigration {
 					// Update
 					RestUtil.getInstance(Object.class)
 						.config(config)
-						.host(config.getProduction())
+						.host(host)
 						.path("/rest/api/3/workflows/update")
 						.method(HttpMethod.POST)
 						.payload(node.get(0))
 						.request();
-					Log.info(LOGGER, "Workflow updated: " + workflowName + " from file " + path.toString());
+					Log.info(LOGGER, 
+							"Workflow updated: " + workflowName + " from file " + path.toString());
 					success++;
 				} catch (Exception ex) {
 					Log.error(LOGGER, "Error updating workflow from file: " + path.toString(), ex);
@@ -712,18 +814,16 @@ public class JiraCloudWorkflowMigration {
 		Log.info(LOGGER, "Workflows updated: " + success + "/" + total);
 	}
 
-	private static void getCredential(Config config) throws Exception {
-		// Get user
-		if (config.getEmail() == null || config.getEmail().isBlank()) {
-			String email = Console.readLine("User Email: ");
-			config.setEmail(email);
-		}
-		// Get password
-		if (config.getToken() == null || config.getToken().isBlank()) {
-			Console.println("User Email: " + config.getEmail());
+	private static void getCredential(Config config, CommandLine cmd) throws Exception {
+		String email = cmd.getOptionValue(emailOption);
+		config.setEmail(email);
+		String token = cmd.getOptionValue(tokenOption);
+		if (token == null || token.isEmpty()) {
 			char[] pwd = Console.readPassword("API Token: ");
 			config.setToken(new String(pwd));
-		}	
+		} else {
+			config.setToken(token);
+		}
 	}
 
 	private static Path createOutputDirectory() throws Exception {
@@ -738,20 +838,12 @@ public class JiraCloudWorkflowMigration {
 		CommandLine cmd = null;
 		Path outputDir = null;
 		try {
-			cmd = parser.parse(exportSandboxOptions, args);
+			cmd = parser.parse(exportOptions, args);
+			String targetHost = cmd.getOptionValue(targetHostOption);
 			outputDir = createOutputDirectory();
-			getCredential(config);
-			export(config, config.getSandbox(), outputDir, cmd);
-			exportWorkflow(config, config.getSandbox(), outputDir, cmd);
-		} catch (ParseException pex) {
-			// Ignore
-		}
-		try {
-			cmd = parser.parse(exportProductionOptions, args);
-			outputDir = createOutputDirectory();
-			getCredential(config);
-			export(config, config.getProduction(), outputDir, cmd);
-			exportWorkflow(config, config.getProduction(), outputDir, cmd);
+			getCredential(config, cmd);
+			export(config, targetHost, outputDir, cmd);
+			exportWorkflow(config, targetHost, outputDir, cmd);
 		} catch (ParseException pex) {
 			// Ignore
 		}
@@ -763,9 +855,9 @@ public class JiraCloudWorkflowMigration {
 			// Ignore
 		}
 		try {
-			cmd = parser.parse(remapSandboxWorkflowOptions, args);
+			cmd = parser.parse(remapWorkflowOptions, args);
 			outputDir = createOutputDirectory();
-			remapSandboxWorkflow(config, outputDir, cmd);
+			remapWorkflow(config, outputDir, cmd);
 		} catch (ParseException pex) {
 			// Ignore
 		}
@@ -783,18 +875,18 @@ public class JiraCloudWorkflowMigration {
 		}
 		try {
 			cmd = parser.parse(updateWorkflowOptions, args);
-			getCredential(config);
-			updateProductionWorkflow(config, cmd);
+			String targetHost = cmd.getOptionValue(targetHostOption);
+			getCredential(config, cmd);
+			updateWorkflow(config, targetHost, cmd);
 		} catch (ParseException pex) {
 			// Ignore
 		}
 		if (cmd == null) {
 			HelpFormatter hf = new HelpFormatter();
-			hf.printHelp("Export sandbox objects", exportSandboxOptions);
-			hf.printHelp("Export production objects", exportProductionOptions);
-			hf.printHelp("Match sandbox and production objects", matchOptions);
-			hf.printHelp("Remap sandbox workflows", remapSandboxWorkflowOptions);
-			hf.printHelp("Update production workflows", updateWorkflowOptions);
+			hf.printHelp("Export objects from site", exportOptions);
+			hf.printHelp("Match export objects from two sites", matchOptions);
+			hf.printHelp("Remap workflows to files", remapWorkflowOptions);
+			hf.printHelp("Update workflows in site", updateWorkflowOptions);
 			hf.printHelp("ScriptRunner pack utility", packOptions);
 			hf.printHelp("ScriptRunner unpack utility", unpackOptions);
 		}

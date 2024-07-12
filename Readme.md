@@ -203,7 +203,7 @@ Each file contains an array of objects:
         "valueProcessorClass": "com.igsl.workflow.preprocessor.ScriptRunnerCompressedData",
         "valueRegex": "application/([\\W]+)",
         "valueCaptureGroups": 1,
-        "valueReplacement": "test/$1",
+        "valueReplacement": "mimetype/$1",
         "modelClass": null,
         "targetWorkflowNames": []
     }
@@ -235,8 +235,9 @@ Each file contains an array of objects:
             1. For `Collision`, `MATCH_RESULT` contains multiple object IDs with the same `UNIQUE_NAME`.
             1. Modify `MATCH_WITH` to contain a single production object ID.
             1. Modify `MATCH_RESULT` to `Matched`.
+1. Move unwanted mapper JSON file away from mapper folder.
 1. Remap sandbox workflows: `java -jar JiraCloudWorkflowMigration-[version].jar -rw -sd SANDBOX -md MATCH`.
     1. This created a new folder with current timestmap. Rename it to `REMAP`.
     1. This folder contains one `Workflow ([Name]).json` per remapped workflow. 
 1. Update production workflows: `java -jar JiraCloudWorkflowMigration-[version].jar -uw -wd REMAP`. 
-    1. Note that Jira checks the version data in the JSON; so after each update you need to export again before you can update a second time.
+    1. Note that Jira checks the version data in the JSON; so after each update you need to export again (and repeat all above steps) before you can update a second time.

@@ -19,14 +19,12 @@ public class Config {
 			.enable(JsonReadFeature.ALLOW_JAVA_COMMENTS)
 			.build();
 	private static Config instance;
-	private String production;
-	private String sandbox;
-	private String email;
-	private String token;
 	private int rate;
 	private int period;
 	private String objectTypePackage;
 	private List<String> objectTypes;
+	private String email;
+	private String token;
 	static {
 		try (InputStream is = Config.class.getClassLoader().getResourceAsStream(CONFIG_FILENAME)) {
 			instance = OM.readerFor(Config.class).readValue(is);
@@ -42,30 +40,6 @@ public class Config {
 		return SCHEME;
 	}
 	// Generated
-	public String getProduction() {
-		return production;
-	}
-	public void setProduction(String production) {
-		this.production = production;
-	}
-	public String getSandbox() {
-		return sandbox;
-	}
-	public void setSandbox(String sandbox) {
-		this.sandbox = sandbox;
-	}
-	public String getEmail() {
-		return email;
-	}
-	public void setEmail(String email) {
-		this.email = email;
-	}
-	public String getToken() {
-		return token;
-	}
-	public void setToken(String token) {
-		this.token = token;
-	}
 	public int getRate() {
 		return rate;
 	}
@@ -89,5 +63,17 @@ public class Config {
 	}
 	public void setObjectTypes(List<String> objectTypes) {
 		this.objectTypes = objectTypes;
+	}
+	public String getEmail() {
+		return email;
+	}
+	public void setEmail(String email) {
+		this.email = email;
+	}
+	public String getToken() {
+		return token;
+	}
+	public void setToken(String token) {
+		this.token = token;
 	}
 }

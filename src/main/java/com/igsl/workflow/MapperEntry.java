@@ -37,6 +37,17 @@ public class MapperEntry {
 	 */
 	private List<Integer> valueCaptureGroups;
 	/**
+	 * Applied on each capture group to split it.
+	 * If null, no split is performed.
+	 * This mechanism is based on String.split.
+	 */
+	private String splitRegex;
+	/**
+	 * Quote used for item value.
+	 * If found, removed before remapping, and added back afterwards.
+	 */
+	private String quote;
+	/**
 	 * Replacement for value. Syntax is for Matcher class.
 	 * Default is $0.
 	 * If your capture group is not 0, you should include the other parts. 
@@ -124,5 +135,17 @@ public class MapperEntry {
 	}
 	public void setJsonPaths(List<String> jsonPaths) {
 		this.jsonPaths = jsonPaths;
+	}
+	public String getSplitRegex() {
+		return splitRegex;
+	}
+	public void setSplitRegex(String splitRegex) {
+		this.splitRegex = splitRegex;
+	}
+	public String getQuote() {
+		return quote;
+	}
+	public void setQuote(String quote) {
+		this.quote = quote;
 	}
 }

@@ -1,0 +1,293 @@
+[
+    {
+        "name": "JMWE Condition CurrentStatusCondition",
+        "jsonPaths": [
+            "[*]",
+            "workflows[*]",
+            "transitions[*]",
+            "conditions",
+            "conditions[*]",
+            "parameters[?(@.appKey==\"com.innovalog.jmwe.jira-misc-workflow-extensions__CurrentStatusCondition\")]",
+            "config"
+        ],
+        "valueProcessorClass": null,
+        "valueRegex": "\"statusIds\":\\[([^\\]]+)\\]",
+        "valueCaptureGroups": [1],
+        "splitRegex": ",",
+        "valueReplacement": "\"statusIds\":[$1]",
+        "modelClass": "com.igsl.mode.Status",
+        "targetWorkflowNames": []
+    },
+    {
+        "name": "JMWE PostFunction SetFieldValueFunction",
+        "jsonPaths": [
+            "[*]",
+            "workflows[*]",
+            "transitions[*]",
+            "actions[*]",
+            "parameters[?(@.appKey==\"com.innovalog.jmwe.jira-misc-workflow-extensions__SetFieldValueFunction\")]",
+            "config"
+        ],
+        "valueProcessorClass": null,
+        "valueRegex": "\"fieldId\":\"(customfield_[0-9]+)\"",
+        "valueCaptureGroups": [1],
+        "splitRegex": null,
+        "valueReplacement": "\"fieldId\":\"$1\"",
+        "modelClass": "com.igsl.mode.Field",
+        "targetWorkflowNames": []
+    },
+    {
+        "name": "JMWE PostFunction CopyMultipleFieldsFunction sourceField",
+        "jsonPaths": [
+            "[*]",
+            "workflows[*]",
+            "transitions[*]",
+            "actions[*]",
+            "parameters[?(@.appKey==\"com.innovalog.jmwe.jira-misc-workflow-extensions__CopyMultipleFieldsFunction\")]",
+            "config"
+        ],
+        "valueProcessorClass": null,
+        "valueRegex": "\"sourceField\":\"(customfield_[0-9]+)\"",
+        "valueCaptureGroups": [1],
+        "splitRegex": null,
+        "valueReplacement": "\"sourceField\":\"$1\"",
+        "modelClass": "com.igsl.mode.Field",
+        "targetWorkflowNames": []
+    },
+    {
+        "name": "JMWE PostFunction CopyMultipleFieldsFunction destinationField",
+        "jsonPaths": [
+            "[*]",
+            "workflows[*]",
+            "transitions[*]",
+            "actions[*]",
+            "parameters[?(@.appKey==\"com.innovalog.jmwe.jira-misc-workflow-extensions__CopyMultipleFieldsFunction\")]",
+            "config"
+        ],
+        "valueProcessorClass": null,
+        "valueRegex": "\"destinationField\":\"(customfield_[0-9]+)\"",
+        "valueCaptureGroups": [1],
+        "splitRegex": null,
+        "valueReplacement": "\"destinationField\":\"$1\"",
+        "modelClass": "com.igsl.mode.Field",
+        "targetWorkflowNames": []
+    },
+    {
+        "name": "JMWE PostFunction ClearFieldsFunction",
+        "jsonPaths": [
+            "[*]",
+            "workflows[*]",
+            "transitions[*]",
+            "actions[*]",
+            "parameters[?(@.appKey==\"com.innovalog.jmwe.jira-misc-workflow-extensions__ClearFieldsFunction\")]",
+            "config"
+        ],
+        "valueProcessorClass": null,
+        "valueRegex": "\"fields\":\"(customfield_[0-9]+)\"",
+        "valueCaptureGroups": [1],
+        "splitRegex": null,
+        "valueReplacement": "\"fields\":\"$1\"",
+        "modelClass": "com.igsl.mode.Field",
+        "targetWorkflowNames": []
+    },
+    {
+        "name": "JMWE PostFunction LinkedIssueStatusValidator statusIds",
+        "jsonPaths": [
+            "[*]",
+            "workflows[*]",
+            "transitions[*]",
+            "validators[*]",
+            "parameters[?(@.appKey==\"com.innovalog.jmwe.jira-misc-workflow-extensions__LinkedIssueStatusValidator\")]",
+            "config"
+        ],
+        "valueProcessorClass": null,
+        "valueRegex": "\"statusIds\":\\[([0-9]+)\\]",
+        "valueCaptureGroups": [1],
+        "splitRegex": ",",
+        "valueReplacement": "\"statusIds\":[$1]",
+        "modelClass": "com.igsl.mode.Status",
+        "targetWorkflowNames": []
+    },
+    {
+        "name": "JMWE PostFunction LinkedIssueStatusValidator selectedLinkTypeId",
+        "jsonPaths": [
+            "[*]",
+            "workflows[*]",
+            "transitions[*]",
+            "validators[*]",
+            "parameters[?(@.appKey==\"com.innovalog.jmwe.jira-misc-workflow-extensions__LinkedIssueStatusValidator\")]",
+            "config"
+        ],
+        "valueProcessorClass": null,
+        "valueRegex": "\"selectedLinkTypeId\":(\"?)([^\"]+)(\"?)",
+        "valueCaptureGroups": [2],
+        "splitRegex": ",",
+        "valueReplacement": "\"selectedLinkTypeId\":$1$2$3",
+        "modelClass": "com.igsl.mode.IssueTypeLink",
+        "targetWorkflowNames": []
+    },
+    {
+        "name": "JMWE PostFunction LinkedIssueStatusValidator selectedIssueTypeId",
+        "jsonPaths": [
+            "[*]",
+            "workflows[*]",
+            "transitions[*]",
+            "validators[*]",
+            "parameters[?(@.appKey==\"com.innovalog.jmwe.jira-misc-workflow-extensions__LinkedIssueStatusValidator\")]",
+            "config"
+        ],
+        "valueProcessorClass": null,
+        "valueRegex": "\"selectedIssueTypeId\":([0-9]+)",
+        "valueCaptureGroups": [1],
+        "splitRegex": null,
+        "valueReplacement": "\"selectedIssueTypeId\":$1",
+        "modelClass": "com.igsl.mode.IssueType",
+        "targetWorkflowNames": []
+    },
+    {
+        "name": "JMWE PostFunction CreateIssueFunction customfield",
+        "jsonPaths": [
+            "[*]",
+            "workflows[*]",
+            "transitions[*]",
+            "actions[*]",
+            "parameters[?(@.appKey==\"com.innovalog.jmwe.jira-misc-workflow-extensions__CreateIssueFunction\")]",
+            "config"
+        ],
+        "valueProcessorClass": null,
+        "valueRegex": "(customfield_[0-9]+)",
+        "valueCaptureGroups": [],
+        "splitRegex": null,
+        "valueReplacement": null,
+        "modelClass": "com.igsl.mode.Field",
+        "targetWorkflowNames": []
+    },
+    {
+        "name": "JMWE PostFunction CreateIssueFunction selectedLinkType",
+        "jsonPaths": [
+            "[*]",
+            "workflows[*]",
+            "transitions[*]",
+            "actions[*]",
+            "parameters[?(@.appKey==\"com.innovalog.jmwe.jira-misc-workflow-extensions__CreateIssueFunction\")]",
+            "config"
+        ],
+        "valueProcessorClass": null,
+        "valueRegex": "\"selectedLinkType\":\"([^:]+):([^\"]+)\"",
+        "valueCaptureGroups": [2],
+        "splitRegex": null,
+        "valueReplacement": "\"selectedLinkType\":\"$1:$2\"",
+        "modelClass": "com.igsl.mode.IssueTypeLink",
+        "targetWorkflowNames": []
+    },
+    {
+        "name": "JMWE PostFunction IncreaseFieldValueFunction",
+        "jsonPaths": [
+            "[*]",
+            "workflows[*]",
+            "transitions[*]",
+            "actions[*]",
+            "parameters[?(@.appKey==\"com.innovalog.jmwe.jira-misc-workflow-extensions__IncreaseFieldValueFunction\")]",
+            "config"
+        ],
+        "valueProcessorClass": null,
+        "valueRegex": "\"fieldId\":\"(customfield_[0-9]+)\"",
+        "valueCaptureGroups": [1],
+        "splitRegex": null,
+        "valueReplacement": "\"fieldId\":\"$1\"",
+        "modelClass": "com.igsl.mode.Field",
+        "targetWorkflowNames": []
+    },
+    {
+        "name": "JMWE PostFunction TransitionIssueFunction restrictToProjectRoleId",
+        "jsonPaths": [
+            "[*]",
+            "workflows[*]",
+            "transitions[*]",
+            "actions[*]",
+            "parameters[?(@.appKey==\"com.innovalog.jmwe.jira-misc-workflow-extensions__TransitionIssueFunction\")]",
+            "config"
+        ],
+        "valueProcessorClass": null,
+        "valueRegex": "\"restrictToProjectRoleId\":([0-9]+)",
+        "valueCaptureGroups": [1],
+        "splitRegex": null,
+        "valueReplacement": "\"restrictToProjectRoleId\":$1",
+        "modelClass": "com.igsl.mode.ProjectRole",
+        "targetWorkflowNames": []
+    },
+    {
+        "name": "JMWE PostFunction TransitionIssueFunction restrictToGroup",
+        "jsonPaths": [
+            "[*]",
+            "workflows[*]",
+            "transitions[*]",
+            "actions[*]",
+            "parameters[?(@.appKey==\"com.innovalog.jmwe.jira-misc-workflow-extensions__TransitionIssueFunction\")]",
+            "config"
+        ],
+        "valueProcessorClass": null,
+        "valueRegex": "\"restrictToGroup\":\"([^\"]+)\"",
+        "valueCaptureGroups": [1],
+        "splitRegex": null,
+        "valueReplacement": "\"restrictToGroup\":\"$1\"",
+        "modelClass": "com.igsl.mode.Group",
+        "targetWorkflowNames": []
+    },
+    {
+        "name": "JMWE PostFunction LinkedIssuesValidator selectedLinkTypeId",
+        "jsonPaths": [
+            "[*]",
+            "workflows[*]",
+            "transitions[*]",
+            "validators[*]",
+            "parameters[?(@.appKey==\"com.innovalog.jmwe.jira-misc-workflow-extensions__LinkedIssuesValidator\")]",
+            "config"
+        ],
+        "valueProcessorClass": null,
+        "valueRegex": "\"selectedLinkTypeId\":(\"?)([^\"]+)(\"?)",
+        "valueCaptureGroups": [2],
+        "splitRegex": ",",
+        "valueReplacement": "\"selectedLinkTypeId\":$1$2$3",
+        "modelClass": "com.igsl.mode.IssueTypeLink",
+        "targetWorkflowNames": []
+    },
+    {
+        "name": "JMWE PostFunction LinkedIssuesValidator selectedIssueTypeId",
+        "jsonPaths": [
+            "[*]",
+            "workflows[*]",
+            "transitions[*]",
+            "validators[*]",
+            "parameters[?(@.appKey==\"com.innovalog.jmwe.jira-misc-workflow-extensions__LinkedIssuesValidator\")]",
+            "config"
+        ],
+        "valueProcessorClass": null,
+        "valueRegex": "\"selectedIssueTypeId\":([0-9]+)",
+        "valueCaptureGroups": [1],
+        "splitRegex": null,
+        "valueReplacement": "\"selectedIssueTypeId\":$1",
+        "modelClass": "com.igsl.mode.IssueType",
+        "targetWorkflowNames": []
+    },
+    {
+        "name": "JMWE Condition UserCondition",
+        "jsonPaths": [
+            "[*]",
+            "workflows[*]",
+            "transitions[*]",
+            "conditions",
+            "conditions[*]",
+            "parameters[?(@.appKey==\"com.innovalog.jmwe.jira-misc-workflow-extensions__UserCondition\")]",
+            "config"
+        ],
+        "valueProcessorClass": null,
+        "valueRegex": "\"userFieldsToCheck\":\\[([^\\]]+)\\]",
+        "valueCaptureGroups": [1],
+        "splitRegex": ",",
+        "quote": "\"",
+        "valueReplacement": "\"userFieldsToCheck\":[$1]",
+        "modelClass": "com.igsl.mode.Field",
+        "targetWorkflowNames": []
+    }
+]
