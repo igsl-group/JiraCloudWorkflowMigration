@@ -2,6 +2,7 @@ package com.igsl;
 
 import java.io.FileReader;
 import java.io.FileWriter;
+import java.net.URL;
 import java.net.http.HttpResponse;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
@@ -18,8 +19,10 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.ws.rs.HttpMethod;
+import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.Response;
 
 import org.apache.commons.cli.CommandLine;
@@ -39,9 +42,14 @@ import org.apache.logging.log4j.Logger;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.igsl.model.Model;
+import com.igsl.model.Project;
+import com.igsl.model.ProjectRole;
+import com.igsl.model.User;
 import com.igsl.model.Workflow;
 import com.igsl.rest.Paged;
+import com.igsl.rest.Pagination;
 import com.igsl.rest.RestUtil;
 import com.igsl.workflow.MapperConfig;
 import com.igsl.workflow.MapperEntry;
@@ -83,6 +91,14 @@ public class JiraCloudWorkflowMigration {
 	
 	private static Options matchOptions;
 	private static Option matchOption;
+
+	private static Option targetUserOption;
+	
+	private static Option grantProjectsOption;
+	private static Options grantProjectsOptions;
+	
+	private static Option revokeProjectsOption;
+	private static Options revokeProjectsOptions;
 	
 	private static Options remapWorkflowOptions;
 	private static Option remapWorkflowOption;
@@ -147,6 +163,38 @@ public class JiraCloudWorkflowMigration {
 				.required()
 				.build();
 
+		// Grant or revoke project access
+		targetUserOption = Option.builder()
+				.desc("Grant admin access to this account id. If not specified, defaults to current user.")
+				.option("tu")
+				.longOpt("targetuser")
+				.hasArg()
+				.build();
+		grantProjectsOption = Option.builder()
+				.desc("Grant admin access to all projects")
+				.option("gp")
+				.longOpt("grantprojects")
+				.required()
+				.build();
+		grantProjectsOptions = new Options()
+				.addOption(grantProjectsOption)
+				.addOption(targetHostOption)
+				.addOption(emailOption)
+				.addOption(tokenOption)
+				.addOption(targetUserOption);
+		revokeProjectsOption = Option.builder()
+				.desc("Revoke admin access to all projects")
+				.option("rp")
+				.longOpt("revokeprojects")
+				.required()
+				.build();
+		revokeProjectsOptions = new Options()
+				.addOption(revokeProjectsOption)
+				.addOption(targetHostOption)
+				.addOption(emailOption)
+				.addOption(tokenOption)
+				.addOption(targetUserOption);
+		
 		// Update workflow on site using directory
 		updateWorkflowOption = Option.builder()
 				.desc("Update workflow in target site")
@@ -209,7 +257,8 @@ public class JiraCloudWorkflowMigration {
 		remapWorkflowOptions = new Options()
 				.addOption(remapWorkflowOption)
 				.addOption(matchDirOption)
-				.addOption(sourceDirOption);
+				.addOption(sourceDirOption)
+				.addOption(targetDirOption);
 
 		// Export objects
 		exportOption = Option.builder()
@@ -674,9 +723,22 @@ public class JiraCloudWorkflowMigration {
 		return result;
 	}
 	
+	private static String modifyIdAndVersion(String sourceXML, String targetXML) throws Exception {
+		DocumentContext sourceValueCtx = JsonPath.parse(sourceXML);
+		DocumentContext targetValueCtx = JsonPath.parse(targetXML);
+		String targetId = targetValueCtx.read("$.[0].workflows.[0].id", String.class);
+		String targetVersionId = targetValueCtx.read("$.[0].workflows.[0].version.id", String.class);
+		int targetVersionNumber = targetValueCtx.read("$.[0].workflows.[0].version.versionNumber", Integer.class);
+		sourceValueCtx = sourceValueCtx.put("$.[0].workflows.[0]", "id", targetId);
+		sourceValueCtx = sourceValueCtx.put("$.[0].workflows.[0].version", "id", targetVersionId);
+		sourceValueCtx = sourceValueCtx.put("$.[0].workflows.[0].version", "versionNumber", targetVersionNumber);
+		return sourceValueCtx.jsonString();
+	}
+	
 	private static void remapWorkflow(Config config, Path outputDir, CommandLine cmd) throws Exception {
 		Path sourceDir = Paths.get(cmd.getOptionValue(sourceDirOption));
 		Path matchDir = Paths.get(cmd.getOptionValue(matchDirOption));
+		Path targetDir = Paths.get(cmd.getOptionValue(targetDirOption));
 		PathMatcher pathMatcher = FileSystems.getDefault().getPathMatcher("glob:*.json");
 		MapperConfig mapperConfig = MapperConfig.getInstance();
 		int total = 0;
@@ -696,6 +758,13 @@ public class JiraCloudWorkflowMigration {
 					JsonNode workflow = OM.readTree(source);
 					workflowName = workflow.get(0).get("workflows").get(0).get("name").asText();
 					Log.debug(LOGGER, "Processing workflow: " + path.toString());
+					// Find same workflow in targetDir
+					Path targetWorkflowPath = targetDir.resolve(path.getFileName());
+					if (targetWorkflowPath.toFile().exists() && targetWorkflowPath.toFile().isFile()) {
+						// Patch version and Id to same as target
+						String targetSource = Files.readString(targetWorkflowPath);
+						modifiedSource = modifyIdAndVersion(modifiedSource, targetSource);
+					}
 					// For each mapper
 					for (MapperEntry mapper : mapperConfig.getMappers()) {
 						// Check workflow name
@@ -814,6 +883,153 @@ public class JiraCloudWorkflowMigration {
 		Log.info(LOGGER, "Workflows updated: " + success + "/" + total);
 	}
 
+	// Get list of projects
+	private static List<Project> getProjects(Config config, String host) throws Exception {
+		List<Project> projectList = Model.exportObject(config, Project.class, host);
+		return projectList;
+	}
+	
+	// Get administrator role id for project
+	private static String getAdminProjectRole(Config config, String host, Project project) throws Exception {
+		final String ADMINISTRATOR = "Administrators";
+		final Pattern PATTERN = Pattern.compile(".+/role/([0-9]+)");
+		RestUtil<Object> restUtil = RestUtil.getInstance(Object.class); 
+		Response resp = restUtil
+			.config(config)
+			.host(host)
+			.method(HttpMethod.GET)
+			.path("/rest/api/3/project/" + project.getId() + "/role")
+			.request();
+		if ((resp.getStatus() & HttpStatus.SC_OK) == HttpStatus.SC_OK) {
+			Map<String, String> map = resp.readEntity(new GenericType<Map<String, String>>(){});
+			if (map.containsKey(ADMINISTRATOR)) {
+				String url = map.get(ADMINISTRATOR);
+				Matcher m = PATTERN.matcher(url);
+				if (m.matches()) {
+					return m.group(1);
+				}
+			}
+		}
+		return null;
+	}
+	
+	private static String getAccountId(Config config, String host, String email, CommandLine cmd) 
+			throws Exception {
+		RestUtil<User> restUtil = RestUtil.getInstance(User.class); 
+		Paged<User> pagination = new Paged<User>(User.class);
+		pagination.valuesProperty("users");
+		List<User> users = restUtil
+				.config(config)
+				.host(host)
+				.method(HttpMethod.GET)
+				.path("/rest/api/3/user/picker")
+				.query("query", email)
+				.pagination(pagination)
+				.requestAllPages();
+		if (users.size() == 1) {
+			return users.get(0).getAccountId();
+		}
+		return null;
+	}
+	
+	private static void grantProjects(Config config, String host, String accountId, CommandLine cmd) 
+			throws Exception {
+		if (accountId == null) {
+			accountId = getAccountId(config, host, config.getEmail(), cmd);
+		}
+		List<String> userList = new ArrayList<>();
+		userList.add(accountId);
+		Map<String, Object> payload = new HashMap<>();
+		payload.put("user", userList);
+		RestUtil<Object> rest = RestUtil.getInstance(Object.class);
+		List<Project> projectList = getProjects(config, host);
+		int successCount = 0;
+		for (Project project : projectList) {
+			String roleId = getAdminProjectRole(config, host, project);
+			try {
+				Response resp = rest
+					.config(config)
+					.host(host)
+					.method(HttpMethod.POST)
+					.path("/rest/api/3/project/" + project.getId() + "/role/" + roleId)
+					.payload(payload)
+					.status()
+					.request();
+				switch (resp.getStatus()) {
+				case 200: 
+					Log.info(LOGGER, 
+							"Granted administrator role (" + roleId + ") to user " + accountId + 
+							" in project " + project.getName() + 
+							" (" + project.getId() + ")");
+					successCount++;
+					break;
+				case 400:
+					Log.warn(LOGGER, 
+							"Administrator role (" + roleId + ") is already granted to user " + accountId + 
+							" in project " + project.getName() + 
+							" (" + project.getId() + ")");
+					successCount++;
+					break;
+				default: 
+					throw new Exception(resp.readEntity(String.class));
+				}
+			} catch (Exception ex) {
+				Log.error(LOGGER, 
+						"Unable to grant administrator role (" + roleId + ") to user " + accountId + 
+						" in project " + project.getName() + 
+						" (" + project.getId() + ")", ex);
+			}
+		}
+		Log.info(LOGGER, "Granted successfully: " + successCount + "/" + projectList.size());
+	}
+	
+	private static void revokeProjects(Config config, String host, String accountId, CommandLine cmd) 
+			throws Exception {
+		if (accountId == null) {
+			accountId = getAccountId(config, host, config.getEmail(), cmd);
+		}
+		RestUtil<Object> rest = RestUtil.getInstance(Object.class);
+		List<Project> projectList = getProjects(config, host);
+		int successCount = 0;
+		for (Project project : projectList) {
+			String roleId = getAdminProjectRole(config, host, project);
+			try {
+				Response resp = rest
+					.config(config)
+					.host(host)
+					.method(HttpMethod.DELETE)
+					.path("/rest/api/3/project/" + project.getId() + "/role/" + roleId)
+					.query("user", accountId)
+					.status()
+					.request();
+				switch (resp.getStatus()) {
+				case 204: 
+					Log.info(LOGGER, 
+							"Revoked administrator role (" + roleId + ") from user " + accountId + 
+							" in project " + project.getName() + 
+							" (" + project.getId() + ")");
+					successCount++;
+					break;
+				case 404:
+					Log.warn(LOGGER, 
+							"Administrator role (" + roleId + ") is not granted to user " + accountId + 
+							" in project " + project.getName() + 
+							" (" + project.getId() + ")");
+					successCount++;
+					break;
+				default: 
+					throw new Exception(resp.readEntity(String.class));
+				}
+			} catch (Exception ex) {
+				Log.error(LOGGER, 
+						"Unable to revoke administrator role (" + roleId + ") from user " + accountId + 
+						" in project " + project.getName() + 
+						" (" + project.getId() + ")", ex);
+			}
+		}
+		Log.info(LOGGER, "Revoked successfully: " + successCount + "/" + projectList.size());
+	}
+	
 	private static void getCredential(Config config, CommandLine cmd) throws Exception {
 		String email = cmd.getOptionValue(emailOption);
 		config.setEmail(email);
@@ -881,11 +1097,31 @@ public class JiraCloudWorkflowMigration {
 		} catch (ParseException pex) {
 			// Ignore
 		}
+		try {
+			cmd = parser.parse(grantProjectsOptions, args);
+			String targetHost = cmd.getOptionValue(targetHostOption);
+			String targetUser = cmd.getOptionValue(targetUserOption);
+			getCredential(config, cmd);
+			grantProjects(config, targetHost, targetUser, cmd);
+		} catch (ParseException pex) {
+			// Ignore
+		}
+		try {
+			cmd = parser.parse(revokeProjectsOptions, args);
+			String targetHost = cmd.getOptionValue(targetHostOption);
+			String targetUser = cmd.getOptionValue(targetUserOption);
+			getCredential(config, cmd);
+			revokeProjects(config, targetHost, targetUser, cmd);
+		} catch (ParseException pex) {
+			// Ignore
+		}
 		if (cmd == null) {
 			HelpFormatter hf = new HelpFormatter();
 			hf.printHelp("Export objects from site", exportOptions);
 			hf.printHelp("Match export objects from two sites", matchOptions);
 			hf.printHelp("Remap workflows to files", remapWorkflowOptions);
+			hf.printHelp("Grant admin rights in all projects", grantProjectsOptions);
+			hf.printHelp("Revoke admin rights in all projects", revokeProjectsOptions);
 			hf.printHelp("Update workflows in site", updateWorkflowOptions);
 			hf.printHelp("ScriptRunner pack utility", packOptions);
 			hf.printHelp("ScriptRunner unpack utility", unpackOptions);

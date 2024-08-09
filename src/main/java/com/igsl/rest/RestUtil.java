@@ -394,7 +394,7 @@ public class RestUtil<T> {
 			throw new IllegalArgumentException("Invalid method \"" + method + "\"");
 		}
 		// Check status if statusList is provided
-		if (statusList != null) {
+		if (statusList != null && statusList.size() != 0) {
 			boolean statusValid = false;
 			int respStatus = response.getStatus();
 			if (bitwiseStatus) {
