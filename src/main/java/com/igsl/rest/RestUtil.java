@@ -453,6 +453,7 @@ public class RestUtil<T> {
 		if (this.pagination == null) {
 			throw new IllegalStateException("Pagination is not configured. Call .pagination() first.");
 		}
+		this.pagination.reset();
 		List<T> result = new ArrayList<>();
 		while (true) {
 			this.pagination.setup(this);
