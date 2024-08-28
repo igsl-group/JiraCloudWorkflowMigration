@@ -1,5 +1,6 @@
 package com.igsl.rest;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -35,6 +36,17 @@ public class Paged<T> extends Pagination<T> {
 	 */
 	public Paged(Class<T> dataClass) {
 		super(dataClass);
+	}
+	
+	public Paged(Class<T> dataClass, 
+			String startAt, int startAtValue, 
+			String maxResults, int maxResultsValue, 
+			String total, String values) {
+		super(dataClass);
+		startAtParameter(startAt);
+		maxResultsProperty(maxResults);
+		totalProperty(total);
+		valuesProperty(values);
 	}
 	
 	/**
@@ -138,23 +150,41 @@ public class Paged<T> extends Pagination<T> {
 			}
 		}
 		// Values
-		JsonNode valuesNode = root.get(valuesParameterName);
-		if (valuesNode != null) {
-			this.values = new ArrayList<>();
-			if (valuesNode.isArray()) {
-				// Array
-				for (JsonNode arrayItem : valuesNode) {
+		if (valuesParameterName != null && !valuesParameterName.isBlank()) {
+			JsonNode valuesNode = root.get(valuesParameterName);
+			if (valuesNode != null) {
+				this.values = new ArrayList<>();
+				if (valuesNode.isArray()) {
+					// Array
+					for (JsonNode arrayItem : valuesNode) {
+						T item = om.treeToValue(arrayItem, dataClass);
+						this.values.add(item);
+					}
+				} else {
+					// Single item
+					T item = om.treeToValue(valuesNode, dataClass);
+					this.values.add(item);
+				}
+	 		} else {
+	 			this.values = null;
+	 		}
+		} else {
+			// Root should be array of values
+			if (root.isArray()) {
+				this.values = new ArrayList<>();
+				for (JsonNode arrayItem : root) {
 					T item = om.treeToValue(arrayItem, dataClass);
 					this.values.add(item);
 				}
-			} else {
+			} else if (root.isObject()) {
 				// Single item
-				T item = om.treeToValue(valuesNode, dataClass);
+				this.values = new ArrayList<>();
+				T item = om.treeToValue(root, dataClass);
 				this.values.add(item);
+			} else {
+				this.values = null;
 			}
- 		} else {
- 			this.values = null;
- 		}
+		}
 		// Modify startAt
 		int size = 0;
 		if (this.values != null) {
