@@ -1,5 +1,6 @@
 package com.igsl;
 
+import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.net.URL;
@@ -83,6 +84,7 @@ public class JiraCloudWorkflowMigration {
 	
 	private static Option targetHostOption;
 	private static Option sourceDirOption;
+	private static Option workflowListOption;
 	private static Option targetDirOption;
 	private static Option matchDirOption;
 	
@@ -138,6 +140,14 @@ public class JiraCloudWorkflowMigration {
 				.hasArg()
 				.build();
 		
+		workflowListOption = Option.builder()
+				.argName("Workflow list")
+				.desc("File containing a list of workflow names to be included")
+				.option("wl")
+				.longOpt("workflowlist")
+				.required()
+				.hasArg()
+				.build();
 		sourceDirOption = Option.builder()
 				.argName("Directory")
 				.desc("Directory containing objects exported from source site")
@@ -206,6 +216,7 @@ public class JiraCloudWorkflowMigration {
 				.addOption(updateWorkflowOption)
 				.addOption(targetHostOption)
 				.addOption(sourceDirOption)
+				.addOption(workflowListOption)
 				.addOption(emailOption)
 				.addOption(tokenOption);
 				
@@ -840,9 +851,21 @@ public class JiraCloudWorkflowMigration {
 	
 	private static void updateWorkflow(Config config, String host, CommandLine cmd) 
 			throws Exception {
+		String workflowListFile = cmd.getOptionValue(workflowListOption);
+		List<String> workflowList = new ArrayList<>();
+		StringBuilder sb = new StringBuilder();
+		try (BufferedReader r = new BufferedReader(new FileReader(workflowListFile))) {
+			String name = null;
+			while ((name = r.readLine()) != null) {
+				workflowList.add(name);
+				sb.append(name).append(NEWLINE);
+			}
+		} 
+		Log.info(LOGGER, "Workflow(s) to be processed: \n" + sb.toString());
 		Path workflowDir = Paths.get(cmd.getOptionValue(sourceDirOption));
 		PathMatcher pathMatcher = FileSystems.getDefault().getPathMatcher("glob:{**/*.json,*.json}");
 		int total = 0;
+		int ignored = 0;
 		int success = 0;
 		Iterator<Path> it = Files.list(workflowDir).iterator();
 		while (it.hasNext()) {
@@ -852,6 +875,16 @@ public class JiraCloudWorkflowMigration {
 				try {
 					JsonNode node = OM.readTree(Files.readString(path));
 					String workflowName = node.get(0).get("workflows").get(0).get("name").asText();
+					if (!workflowList.contains(workflowName)) {
+						Log.info(LOGGER, 
+								"Workflow ignored: [" + workflowName + "]");
+						ignored++;
+						total--;
+						continue;
+					} else {
+						Log.info(LOGGER, 
+								"Processing workflow [" + workflowName + "]...");
+					}
 					String workflowId = node.get(0).get("workflows").get(0).get("id").asText();
 					// Validate
 					Map<String, Object> payload = new HashMap<>();
@@ -881,6 +914,7 @@ public class JiraCloudWorkflowMigration {
 			} // If path matches pattern
 		}
 		Log.info(LOGGER, "Workflows updated: " + success + "/" + total);
+		Log.info(LOGGER, "Workflows ignored: " + ignored);
 	}
 
 	// Get list of projects
