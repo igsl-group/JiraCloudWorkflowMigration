@@ -1,0 +1,83 @@
+Archived IPE Dev Epic_Other Issue Types Workflow
+Archived IPE Dev Story Issue Type Workflow
+CSCM Change Request Workflow
+Change Management Request
+Copy of IPE Change Management Request for testing
+GPP SR Verification Request Workflow v1 MVP
+GSDT: Jira Service Desk default workflow
+Global Service and Operation Agile Release Train Workflow
+Hydra Access Request Workflow
+IP ART Pre-Approve CMR Workflow
+IP Engineering Emergency CMR Workflow v1.3
+IP Engineering Normal CMR Workflow v1.3
+IP Engineering PI Document Approval Workflow
+IP ISO Incident and Problem Management Workflow For Jira Service Desk
+IP ISO Service Request Fulfilment Workflow For Jira Service Desk
+IPC Risk Workflow
+IPC SAFe Epic Workflow
+IPE AS3491 Incident Management Workflow For Jira Service Desk
+IPE AS3491 Normal CMR Workflow v1
+IPE Access Request SR Workflow
+IPE Add Device to Arbor/Samplicator Request SR Workflow
+IPE Applications Problem and Incident Management Workflow For Jira Service Desk
+IPE Change Request Workflow v1.3
+IPE DNS Service Request Workflow
+IPE Dev Epic_Feature Issue Types Workflow
+IPE Dev Epic_Other Issue Types Workflow
+IPE Dev Story Issue Type Workflow
+IPE Emergency Change Management Request
+IPE Firewall Rule Service Request Workflow
+IPE ICAO Threshold Service Request Workflow
+IPE Port Request Service Request Workflow v1.1
+IPE Projects Service Request Workflow
+IPE TURN-DOWN Process (Peering & Backbone Routers) w/ Change Management Workflow For Jira Service Desk
+ISO User Account Audit Workflow
+ISODOCAR: Jira Service Desk default workflow
+Ipe Security Pen Test Workflow
+Ipe Turn Up Backbone Interface
+Ipe Turn Up Router/ Switch Workflow
+Leave Request Workflow
+NSO: Sync from Router Workflow
+PEERING: New peering activation
+PGS: Task Management Workflow
+Pre-Approved Sub-Task IPE AS3491 CMR Workflow
+SDWAN (VELOCLOUD) TDF Workflow
+Software Simplified Workflow for Project GATA
+TAC: Incident Management workflow for JIRA Service Desk
+TAC: JIRA Service Desk default workflow
+TAC: Service Request Fulfilment with Approvals workflow for JIRA Service Desk
+TAC: Service Request Fulfilment workflow for JIRA Service Desk
+TAG: Service Request Fulfilment with Approvals workflow for JIRA Service Desk
+TAGMOB: Service Request Fulfilment with Approvals workflow for Jira Service Desk
+TAGSEC: Service Request Fulfilment with Approvals workflow for Jira Service Desk
+TAGUCAAS: Service Request Fulfilment with Approvals workflow for Jira Service Desk
+TCM Change Request Workflow
+TDF SR Verification Request Workflow
+TXCE: Incident Management workflow for Jira Service Desk
+TXCE: Service Request Fulfilment with Approvals workflow for Jira Service Desk
+UCAAS Tag Cmr Workflow
+VMNQ: Quote Response Software Simplified Workflow for Project VM
+IPCE Extended Man-Hours (Over Time) Workflow
+SAFe Program PI Objective Workflow v3.0
+TXCFM: Reservation Request Workflow
+SAFe Program PI Objective Key Result - IPC
+SAFe OVS Agile Business Function PI Objective Workflow
+SAFe OVS Agile Business Function Risk Workflow
+VMNQCL Response Workflow
+Data Epic workflow
+SAFe Program Incident Task Workflow
+Data Epic stage workflow
+IS: Information Security Management Workflow
+SAFe Feature Team Engineering Story Workflow
+SAFe Program PI Objective Workflow
+SAFe Feature Team Task Workflow
+VMNQ: Quote Request Software Simplified Workflow for Project VM
+SAFe Feature Team Defect Workflow
+SAFe Feature Team Story Workflow
+Copy 2 of Ipe Security Pen Test Workflow
+Copy of IPE Dev Story Issue Type Workflow
+Copy of IPE Firewall Rule Service Request Workflow
+Copy of IPE Port Request Service Request Workflow v1.1
+Copy of Ipe Security Pen Test Workflow
+IPE Port Request Service Request Workflow v1
+IPCE Termination SR Workflow

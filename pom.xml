@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.igsl</groupId>
     <artifactId>JiraCloudWorkflowMigration</artifactId>
-    <version>1.2.1</version>
+    <version>1.2.2</version>
 
     <organization>
         <name>Integrated Global Solutions Limited</name>
@@ -130,6 +130,7 @@
                                     <includes>
                                         <include>Config.json</include>
                                         <include>log4j2.xml</include>
+                                        <include>Workflow.txt</include>
                                     </includes>
                                 </resource>
                             </resources>
@@ -166,6 +167,7 @@
                         <exclude>mapperDisabled/*</exclude>
                         <exclude>Config.json</exclude>
                         <exclude>log4j2.xml</exclude>
+                        <exclude>Workflow.txt</exclude>
                     </excludes>
                     <archive>
                         <manifest>

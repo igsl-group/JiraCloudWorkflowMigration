@@ -13,6 +13,7 @@ import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -93,6 +94,7 @@ public class JiraCloudWorkflowMigration {
 	
 	private static Options matchOptions;
 	private static Option matchOption;
+	private static Option exactMatchOption;
 
 	private static Option targetUserOption;
 	
@@ -253,8 +255,14 @@ public class JiraCloudWorkflowMigration {
 				.longOpt("match")
 				.required()
 				.build();
+		exactMatchOption = Option.builder()
+				.argName("Object names must be exact match")
+				.option("em")
+				.longOpt("exactMatch")
+				.build();
 		matchOptions = new Options()
 				.addOption(matchOption)
+				.addOption(exactMatchOption)
 				.addOption(sourceDirOption)
 				.addOption(targetDirOption);
 		
@@ -322,7 +330,28 @@ public class JiraCloudWorkflowMigration {
 		}
 	}
 	
-	private static void match(Config config, Path outputDir, CommandLine cmd) throws Exception {
+	protected static final Comparator<String> STRING_COMPARATOR = Comparator.nullsFirst(String::compareTo);
+	protected static final Pattern PATTERN = Pattern.compile("(.+?)( \\(migrated( [0-9]+)?\\))?");	
+	// Compare names with option to allow (migrated #)
+	protected static int compareName(String name1, String name2, boolean exactMatch) {
+		if (name1 != null && name2 != null) {
+			if (!exactMatch) {
+				Matcher matcher1 = PATTERN.matcher(name1);
+				if (matcher1.matches()) {
+					name1 = matcher1.group(1);
+				}
+				Matcher matcher2 = PATTERN.matcher(name2);
+				if (matcher2.matches()) {
+					name2 = matcher2.group(1);
+				}
+			}
+			return STRING_COMPARATOR.compare(name1, name2);
+		}
+		return -1;
+	}
+	
+	private static void match(Config config, Path outputDir, CommandLine cmd, boolean exactMatch) 
+			throws Exception {
 		String sourceDir = cmd.getOptionValue(sourceDirOption);
 		Path source = Paths.get(sourceDir);
 		String targetDir = cmd.getOptionValue(targetDirOption);
@@ -374,9 +403,24 @@ public class JiraCloudWorkflowMigration {
 					v.add(sandboxItem.getIdentifier());
 					v.add(sandboxItem.getUniqueName());
 					v.addAll(sandboxItem.getValues().values());
-					if (productionMap.containsKey(uniqueName)) {
-						List<Model<?>> modelList = productionMap.get(uniqueName);
-						if (modelList.size() == 1) {
+					if (!exactMatch) {
+						// Fuzzy match logic
+						List<Model<?>> modelList = new ArrayList<>();
+						for (List<Model<?>> items : productionMap.values()) {
+							for (Model<?> item : items) {
+								if (0 == compareName(
+										item.getUniqueName(), 
+										sandboxItem.getUniqueName(),
+										false)) {
+									modelList.add(item);
+								}
+							}
+						}
+						if (modelList.size() == 0) {
+							// Source item is not matched
+							v.add(MATCH_RESULT_NO_MATCH);
+							v.add("");
+						} else if (modelList.size() == 1) {
 							// Matched
 							v.add(MATCH_RESULT_MATCHED);
 							v.add(modelList.get(0).getIdentifier());
@@ -391,9 +435,28 @@ public class JiraCloudWorkflowMigration {
 							v.add(sb.toString());
 						}
 					} else {
-						// Source item is not matched
-						v.add(MATCH_RESULT_NO_MATCH);
-						v.add("");
+						// Exact match
+						if (productionMap.containsKey(uniqueName)) {
+							List<Model<?>> modelList = productionMap.get(uniqueName);
+							if (modelList.size() == 1) {
+								// Matched
+								v.add(MATCH_RESULT_MATCHED);
+								v.add(modelList.get(0).getIdentifier());
+							} else {
+								// Collision
+								v.add(MATCH_RESULT_COLLISION);
+								StringBuilder sb = new StringBuilder();
+								for (Model<?> m : modelList) {
+									sb.append(DELIMITER).append(m.getIdentifier());
+								}
+								sb.deleteCharAt(0);
+								v.add(sb.toString());
+							}
+						} else {
+							// Source item is not matched
+							v.add(MATCH_RESULT_NO_MATCH);
+							v.add("");
+						}
 					}
 					CSV.printRecord(printer, v);
 				}
@@ -1099,8 +1162,9 @@ public class JiraCloudWorkflowMigration {
 		}
 		try {
 			cmd = parser.parse(matchOptions, args);
+			boolean exactMatch = cmd.hasOption(exactMatchOption);
 			outputDir = createOutputDirectory();
-			match(config, outputDir, cmd);
+			match(config, outputDir, cmd, exactMatch);
 		} catch (ParseException pex) {
 			// Ignore
 		}
