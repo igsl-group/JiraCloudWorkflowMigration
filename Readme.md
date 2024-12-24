@@ -219,6 +219,7 @@ Each file contains an array of objects:
 
 ## Usage
 1. Before you run this tool, production must contain the same objects (e.g. status, screens, fields) as sandbox. This tool only clones workflows, not their dependent objects. 
+1. Prepare text file Workflow.txt. Put one workflow name on each line. This file is used to control which workflows will be processed. 
 1. Export objects from sandbox: `java -jar JiraCloudWorkflowMigration-[version].jar -es`
     1. This creates a new folder with current timestamp. Rename it to `SANDBOX`.
     1. The folder contains: 
@@ -239,5 +240,4 @@ Each file contains an array of objects:
 1. Remap sandbox workflows: `java -jar JiraCloudWorkflowMigration-[version].jar -rw -sd SANDBOX -md MATCH`.
     1. This created a new folder with current timestmap. Rename it to `REMAP`.
     1. This folder contains one `Workflow ([Name]).json` per remapped workflow. 
-1. Update production workflows: `java -jar JiraCloudWorkflowMigration-[version].jar -uw -wd REMAP`. 
-    1. Note that Jira checks the version data in the JSON; so after each update you need to export again (and repeat all above steps) before you can update a second time.
+1. Update production workflows: `java -jar JiraCloudWorkflowMigration-[version].jar -uw -wd REMAP -wl Workflow.txt`.
