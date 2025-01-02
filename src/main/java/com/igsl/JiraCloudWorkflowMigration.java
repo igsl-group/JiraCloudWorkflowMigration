@@ -357,6 +357,11 @@ public class JiraCloudWorkflowMigration {
 		String targetDir = cmd.getOptionValue(targetDirOption);
 		Path target = Paths.get(targetDir);
 		String packageName = config.getObjectTypePackage();
+		String outputTableFormat = "%-40s %-10s %-10s %-10s %-10s";
+		Log.info(LOGGER, 
+				Log.formatArguments(
+						outputTableFormat, 
+						"File", "Total", "Matched", "No Match", "Collision"));
 		for (String className : config.getObjectTypes()) {
 			Class<?> cls = Class.forName(packageName + "." + className);
 			Model<?> model = (Model<?>) cls.getConstructor().newInstance();
@@ -395,9 +400,14 @@ public class JiraCloudWorkflowMigration {
 			headers.addAll(model.getColumns());
 			headers.add(MATCH_RESULT);
 			headers.add(MATCH_WITH);
+			int matchCount = 0;
+			int collisionCount = 0;
+			int noMatchCount = 0;
+			int totalCount = 0;
 			try (	FileWriter fw = new FileWriter(outputFile.toFile()); 
 					CSVPrinter printer = new CSVPrinter(fw, CSV.getCSVWriteFormat(headers))) {
 				for (Model<?> sandboxItem : sandboxMap.values()) {
+					totalCount++;
 					String uniqueName = sandboxItem.getUniqueName();
 					List<String> v = new ArrayList<>();
 					v.add(sandboxItem.getIdentifier());
@@ -417,14 +427,17 @@ public class JiraCloudWorkflowMigration {
 							}
 						}
 						if (modelList.size() == 0) {
+							noMatchCount++;
 							// Source item is not matched
 							v.add(MATCH_RESULT_NO_MATCH);
 							v.add("");
 						} else if (modelList.size() == 1) {
+							matchCount++;
 							// Matched
 							v.add(MATCH_RESULT_MATCHED);
 							v.add(modelList.get(0).getIdentifier());
 						} else {
+							collisionCount++;
 							// Collision
 							v.add(MATCH_RESULT_COLLISION);
 							StringBuilder sb = new StringBuilder();
@@ -440,9 +453,11 @@ public class JiraCloudWorkflowMigration {
 							List<Model<?>> modelList = productionMap.get(uniqueName);
 							if (modelList.size() == 1) {
 								// Matched
+								matchCount++;
 								v.add(MATCH_RESULT_MATCHED);
 								v.add(modelList.get(0).getIdentifier());
 							} else {
+								collisionCount++;
 								// Collision
 								v.add(MATCH_RESULT_COLLISION);
 								StringBuilder sb = new StringBuilder();
@@ -453,6 +468,7 @@ public class JiraCloudWorkflowMigration {
 								v.add(sb.toString());
 							}
 						} else {
+							noMatchCount++;
 							// Source item is not matched
 							v.add(MATCH_RESULT_NO_MATCH);
 							v.add("");
@@ -460,7 +476,14 @@ public class JiraCloudWorkflowMigration {
 					}
 					CSV.printRecord(printer, v);
 				}
-				Log.info(LOGGER, "Saved " + outputFile.toString());
+				Log.info(LOGGER,  
+						Log.formatArguments(
+								outputTableFormat, 
+								outputFile.toString(),
+								totalCount,
+								matchCount, 
+								noMatchCount, 
+								collisionCount));
 			}
 		}
 		Log.info(LOGGER, 

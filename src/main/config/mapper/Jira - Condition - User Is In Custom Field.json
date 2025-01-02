@@ -1,0 +1,42 @@
+[
+    {
+        "name": "Jira - Condition - User Is In Custom Field: Allow",
+        "jsonPaths": [
+            "[*]",
+            "workflows[*]",
+            "transitions[*]",
+            "conditions",
+            "conditions[?(@.ruleKey==\"system:restrict-issue-transition\")]",
+            "parameters",
+            "allowUserInCustomFields"
+        ],
+        "valueProcessorClass": null,
+        "valueRegex": "customfield_[0-9]+",
+        "valueCaptureGroups": [],
+        "splitRegex": null,
+        "quote": null,
+        "valueReplacement": null,
+        "modelClass": "com.igsl.model.Field",
+        "targetWorkflowNames": []
+    },
+    {
+        "name": "Jira - Condition - User Is In Custom Field: Deny",
+        "jsonPaths": [
+            "[*]",
+            "workflows[*]",
+            "transitions[*]",
+            "conditions",
+            "conditions[?(@.ruleKey==\"system:restrict-issue-transition\")]",
+            "parameters",
+            "denyUserInCustomFields"
+        ],
+        "valueProcessorClass": null,
+        "valueRegex": "customfield_[0-9]+",
+        "valueCaptureGroups": [],
+        "splitRegex": null,
+        "quote": null,
+        "valueReplacement": null,
+        "modelClass": "com.igsl.model.Field",
+        "targetWorkflowNames": []
+    }
+]

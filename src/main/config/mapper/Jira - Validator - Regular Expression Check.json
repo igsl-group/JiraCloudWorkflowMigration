@@ -1,0 +1,21 @@
+[
+    {
+        "name": "Jira - Validator - Regular Expression Check",
+        "jsonPaths": [
+            "[*]",
+            "workflows[*]",
+            "transitions[*]",
+            "validators[?(@.ruleKey==\"system:validate-field-value\" && @.parameters.ruleType==\"fieldMatchesRegularExpression\")]",
+            "parameters",
+            "fieldKey"
+        ],
+        "valueProcessorClass": null,
+        "valueRegex": "customfield_[0-9]+",
+        "valueCaptureGroups": [],
+        "splitRegex": null,
+        "quote": null,
+        "valueReplacement": null,
+        "modelClass": "com.igsl.model.Field",
+        "targetWorkflowNames": []
+    }
+]

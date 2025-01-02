@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.message.ParameterizedMessage;
 
 /**
  * VeraCode wants log data to be sanitized to prevent user data from masquerading as log data.
@@ -11,7 +12,12 @@ import org.apache.logging.log4j.Logger;
  */
 public class Log {
 	
-	private static List<Object> processArguments(Object... args) {
+	public static String formatArguments(String format, Object... args) {
+		Object[] list = processArguments(args);
+		return String.format(format, list);
+	}
+	
+	private static Object[] processArguments(Object... args) {
 		List<Object> newArgs = new ArrayList<>();
 		for (Object o : args) {
 			if (o != null && o instanceof String) {
@@ -21,7 +27,7 @@ public class Log {
 				newArgs.add(o);
 			}
 		}
-		return newArgs;
+		return newArgs.toArray(new Object[0]);
 	}
 	
 	public static void error(Logger logger, String format, Object... args) {

@@ -1,0 +1,56 @@
+[
+    {
+        "name": "Name of this mapper configuration",
+        "jsonPaths": [
+            "NOTE: List of JSON Path expressions. $ is implicitly added to the start of the list. i.e. You start at the top-level array. ",
+            "Use [*] to process all matching JSON nodes.",
+            "Each item in the list is processed separately. ",
+            "The JSON nodes found are then processed one by one for the remaining items."
+        ],
+        "valueProcessorClass": "ValueProcessor implementation class name to preprocess the value. This is mainly used for ScriptRunner, which package its scripts in a special format. Null if not needed.",
+        "valueRegex": "Regular expression to run on jsonPaths result.",
+        "valueCaptureGroups": [ "List of capture group indexes to process. If empty, defaults to 0." ],
+        "splitRegex": "Regular expression applied on each capture group to split it into multiple items. Default null.",
+        "quote": "Quote surrounding each item. If found, removed before remappiong and added back afterwards. Default empty.",
+        "valueReplacement": "Regular expression replacement. If empty, defaults to $0",
+        "modelClass": "Model class to use in remapping.",
+        "targetWorkflowNames": [ "List of workflow names to target. If empty, targets all workflows." ]
+    },
+    
+    {
+        "name": "Example: Remap all statuses",
+        "jsonPaths": [
+            "statuses[*]",
+            "id"
+        ],
+        "valueProcessorClass": null,
+        "valueRegex": "[0-9]+",
+        "valueCaptureGroups": [],
+        "splitRegex": null,
+        "quote": null,
+        "valueReplacement": null,
+        "modelClass": "com.igsl.model.Status",
+        "targetWorkflowNames": []
+    },
+    
+    {
+        "name": "Example: Remap update issue field post-function for priority",
+        "jsonPaths": [
+            "[*]",
+            "workflows[*]",
+            "transitions[*]",
+            "actions[?(@.ruleKey==\"system:update-field\" && @.parameters.field==\"priority\")]",
+            "parameters",
+            "value"
+        ],
+        "valueProcessorClass": null,
+        "valueRegex": "[0-9]+",
+        "valueCaptureGroups": [],
+        "splitRegex": null,
+        "quote": null,
+        "valueReplacement": null,
+        "modelClass": "com.igsl.model.Priority",
+        "targetWorkflowNames": []
+    }
+    
+]

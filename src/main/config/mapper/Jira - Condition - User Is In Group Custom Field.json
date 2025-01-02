@@ -1,0 +1,22 @@
+[
+    {
+        "name": "Jira - Condition - User Is In Group Custom Field",
+        "jsonPaths": [
+            "[*]",
+            "workflows[*]",
+            "transitions[*]",
+            "conditions",
+            "conditions[?(@.ruleKey==\"system:restrict-issue-transition\")]",
+            "parameters",
+            "groupCustomFields"
+        ],
+        "valueProcessorClass": null,
+        "valueRegex": "customfield_[0-9]+",
+        "valueCaptureGroups": [],
+        "splitRegex": null,
+        "quote": null,
+        "valueReplacement": null,
+        "modelClass": "com.igsl.model.Field",
+        "targetWorkflowNames": []
+    }
+]

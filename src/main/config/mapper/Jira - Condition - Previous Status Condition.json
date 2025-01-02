@@ -1,0 +1,22 @@
+[
+    {
+        "name": "Jira - Condition - Previous Status Condition",
+        "jsonPaths": [
+            "[*]",
+            "workflows[*]",
+            "transitions[*]",
+            "conditions",
+            "conditions[?(@.ruleKey==\"system:previous-status-condition\")]",
+            "parameters",
+            "previousStatusIds"
+        ],
+        "valueProcessorClass": null,
+        "valueRegex": "[0-9]+",
+        "valueCaptureGroups": [],
+        "splitRegex": null,
+        "quote": null,
+        "valueReplacement": null,
+        "modelClass": "com.igsl.model.Status",
+        "targetWorkflowNames": []
+    }
+]

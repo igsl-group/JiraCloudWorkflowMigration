@@ -1,0 +1,40 @@
+[
+    {
+        "name": "Jira - Post Function - Update Issue Field: Priority",
+        "jsonPaths": [
+            "[*]",
+            "workflows[*]",
+            "transitions[*]",
+            "actions[?(@.ruleKey==\"system:update-field\" && @.parameters.field==\"priority\")]",
+            "parameters",
+            "value"
+        ],
+        "valueProcessorClass": null,
+        "valueRegex": "[0-9]+",
+        "valueCaptureGroups": [],
+        "splitRegex": null,
+        "quote": null,
+        "valueReplacement": null,
+        "modelClass": "com.igsl.model.Priority",
+        "targetWorkflowNames": []
+    },
+    {
+        "name": "Jira - Post Function - Update Issue Field: Resolution",
+        "jsonPaths": [
+            "[*]",
+            "workflows[*]",
+            "transitions[*]",
+            "actions[?(@.ruleKey==\"system:update-field\" && @.parameters.field==\"resolution\")]",
+            "parameters",
+            "value"
+        ],
+        "valueProcessorClass": null,
+        "valueRegex": "[0-9]+",
+        "valueCaptureGroups": [],
+        "splitRegex": null,
+        "quote": null,
+        "valueReplacement": null,
+        "modelClass": "com.igsl.model.Resolution",
+        "targetWorkflowNames": []
+    }
+]

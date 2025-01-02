@@ -1,0 +1,21 @@
+[
+    {
+        "name": "Jira - Post Function - Update Issue Custom Field",
+        "jsonPaths": [
+            "[*]",
+            "workflows[*]",
+            "transitions[*]",
+            "actions[?(@.ruleKey==\"system:update-field\")]",
+            "parameters",
+            "field"
+        ],
+        "valueProcessorClass": null,
+        "valueRegex": "customfield_[0-9]+",
+        "valueCaptureGroups": [],
+        "splitRegex": null,
+        "quote": null,
+        "valueReplacement": null,
+        "modelClass": "com.igsl.model.Field",
+        "targetWorkflowNames": []
+    }
+]
