@@ -1,6 +1,6 @@
 [
     {
-        "name": "Workflow Status Reference",
+        "name": "Jira - Workflow Status: Reference",
         "jsonPaths": [
             "[*]",
             "workflows[*]", 
@@ -15,7 +15,7 @@
         "targetWorkflowNames": []
     },
     {
-        "name": "Workflow From Status Reference",
+        "name": "Jira - Workflow Status: From Status Reference",
         "jsonPaths": [
             "[*]",
             "workflows[*]",
@@ -31,7 +31,7 @@
         "targetWorkflowNames": []
     },
     {
-        "name": "Workflow To Status Reference",
+        "name": "Jira - Workflow Status: To Status Reference",
         "jsonPaths": [
             "[*]",
             "workflows[*]",

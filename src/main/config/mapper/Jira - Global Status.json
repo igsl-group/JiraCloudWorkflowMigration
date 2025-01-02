@@ -1,6 +1,6 @@
 [
     {
-        "name": "Global Status ID",
+        "name": "Jira - Global Status: Status ID",
         "jsonPaths": [
             "[*]",
             "statuses[*]", 
@@ -14,7 +14,7 @@
         "targetWorkflowNames": []
     },
     {
-        "name": "Global Status Reference",
+        "name": "Jira - Global Status: Status Reference",
         "jsonPaths": [
             "[*]",
             "statuses[*]", 

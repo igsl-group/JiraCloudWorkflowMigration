@@ -1,6 +1,6 @@
 [
     {
-        "name": "ScriptRunner PostFunction Custom Field",
+        "name": "ScriptRunner: PostFunction Custom Field",
         "jsonPaths": [
             "[*]",
             "workflows[*]",
@@ -17,7 +17,7 @@
         "targetWorkflowNames": []
     },
     {
-        "name": "ScriptRunner Validator Custom Field",
+        "name": "ScriptRunner: Validator Custom Field",
         "jsonPaths": [
             "[*]",
             "workflows[*]",
@@ -34,7 +34,7 @@
         "targetWorkflowNames": []
     },
     {
-        "name": "ScriptRunner Condition Custom Field",
+        "name": "ScriptRunner: Condition Custom Field",
         "jsonPaths": [
             "[*]",
             "workflows[*]",

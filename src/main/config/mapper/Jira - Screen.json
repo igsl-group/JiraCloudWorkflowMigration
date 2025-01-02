@@ -1,6 +1,6 @@
 [
     {
-        "name": "Workflow Transition Screens",
+        "name": "Jira - Screen",
         "jsonPaths": [
             "[*]",
             "workflows[*]",

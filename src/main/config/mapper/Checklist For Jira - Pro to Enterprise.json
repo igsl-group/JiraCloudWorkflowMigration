@@ -1,6 +1,6 @@
 [
     {
-        "name": "Checklist for Jira Pro Complete Checklist Post-Function (id)",
+        "name": "Checklist For Jira - Pro to Enterprise: Complete Checklist Post-Function (id)",
         "jsonPaths": [
             "[*]",
             "workflows[*]",
@@ -17,7 +17,7 @@
         "targetWorkflowNames": []
     },
     {
-        "name": "Checklist for Jira Pro Complete Checklist Post-Function (appKey)",
+        "name": "Checklist For Jira - Pro to Enterprise: Complete Checklist Post-Function (appKey)",
         "jsonPaths": [
             "[*]",
             "workflows[*]",
@@ -35,7 +35,7 @@
     },
     
     {
-        "name": "Checklist for Jira Pro Completed Validator (id)",
+        "name": "Checklist For Jira - Pro to Enterprise: Completed Validator (id)",
         "jsonPaths": [
             "[*]",
             "workflows[*]",
@@ -52,7 +52,7 @@
         "targetWorkflowNames": []
     },
     {
-        "name": "Checklist for Jira Pro Completed Validator (appKey)",
+        "name": "Checklist For Jira - Pro to Enterprise: Completed Validator (appKey)",
         "jsonPaths": [
             "[*]",
             "workflows[*]",
@@ -70,7 +70,7 @@
     },
     
     {
-        "name": "Checklist for Jira Pro Mandatory Completed Validator (id)",
+        "name": "Checklist For Jira - Pro to Enterprise: Mandatory Completed Validator (id)",
         "jsonPaths": [
             "[*]",
             "workflows[*]",
@@ -87,7 +87,7 @@
         "targetWorkflowNames": []
     },
     {
-        "name": "Checklist for Jira Pro Mandatory Completed Validator (appKey)",
+        "name": "Checklist For Jira - Pro to Enterprise: Mandatory Completed Validator (appKey)",
         "jsonPaths": [
             "[*]",
             "workflows[*]",
@@ -105,7 +105,7 @@
     },
     
     {
-        "name": "Checklist for Jira Pro Mandatory Not Empty Validator (id)",
+        "name": "Checklist For Jira - Pro to Enterprise: Mandatory Not Empty Validator (id)",
         "jsonPaths": [
             "[*]",
             "workflows[*]",
@@ -122,7 +122,7 @@
         "targetWorkflowNames": []
     },
     {
-        "name": "Checklist for Jira Pro Mandatory Not Empty Validator (appKey)",
+        "name": "Checklist For Jira - Pro to Enterprise: Mandatory Not Empty Validator (appKey)",
         "jsonPaths": [
             "[*]",
             "workflows[*]",

@@ -1,6 +1,6 @@
 [
     {
-        "name": "JMWE Condition CurrentStatusCondition",
+        "name": "JMWE: Condition CurrentStatusCondition",
         "jsonPaths": [
             "[*]",
             "workflows[*]",
@@ -19,7 +19,7 @@
         "targetWorkflowNames": []
     },
     {
-        "name": "JMWE PostFunction SetFieldValueFunction",
+        "name": "JMWE: PostFunction SetFieldValueFunction",
         "jsonPaths": [
             "[*]",
             "workflows[*]",
@@ -37,7 +37,7 @@
         "targetWorkflowNames": []
     },
     {
-        "name": "JMWE PostFunction CopyMultipleFieldsFunction sourceField",
+        "name": "JMWE: PostFunction CopyMultipleFieldsFunction sourceField",
         "jsonPaths": [
             "[*]",
             "workflows[*]",
@@ -55,7 +55,7 @@
         "targetWorkflowNames": []
     },
     {
-        "name": "JMWE PostFunction CopyMultipleFieldsFunction destinationField",
+        "name": "JMWE: PostFunction CopyMultipleFieldsFunction destinationField",
         "jsonPaths": [
             "[*]",
             "workflows[*]",
@@ -73,7 +73,7 @@
         "targetWorkflowNames": []
     },
     {
-        "name": "JMWE PostFunction ClearFieldsFunction",
+        "name": "JMWE: PostFunction ClearFieldsFunction",
         "jsonPaths": [
             "[*]",
             "workflows[*]",
@@ -91,7 +91,7 @@
         "targetWorkflowNames": []
     },
     {
-        "name": "JMWE PostFunction LinkedIssueStatusValidator statusIds",
+        "name": "JMWE: PostFunction LinkedIssueStatusValidator statusIds",
         "jsonPaths": [
             "[*]",
             "workflows[*]",
@@ -109,7 +109,7 @@
         "targetWorkflowNames": []
     },
     {
-        "name": "JMWE PostFunction LinkedIssueStatusValidator selectedLinkTypeId",
+        "name": "JMWE: PostFunction LinkedIssueStatusValidator selectedLinkTypeId",
         "jsonPaths": [
             "[*]",
             "workflows[*]",
@@ -127,7 +127,7 @@
         "targetWorkflowNames": []
     },
     {
-        "name": "JMWE PostFunction LinkedIssueStatusValidator selectedIssueTypeId",
+        "name": "JMWE: PostFunction LinkedIssueStatusValidator selectedIssueTypeId",
         "jsonPaths": [
             "[*]",
             "workflows[*]",
@@ -145,7 +145,7 @@
         "targetWorkflowNames": []
     },
     {
-        "name": "JMWE PostFunction CreateIssueFunction customfield",
+        "name": "JMWE: PostFunction CreateIssueFunction customfield",
         "jsonPaths": [
             "[*]",
             "workflows[*]",
@@ -163,7 +163,7 @@
         "targetWorkflowNames": []
     },
     {
-        "name": "JMWE PostFunction CreateIssueFunction selectedLinkType",
+        "name": "JMWE: PostFunction CreateIssueFunction selectedLinkType",
         "jsonPaths": [
             "[*]",
             "workflows[*]",
@@ -181,7 +181,7 @@
         "targetWorkflowNames": []
     },
     {
-        "name": "JMWE PostFunction IncreaseFieldValueFunction",
+        "name": "JMWE: PostFunction IncreaseFieldValueFunction",
         "jsonPaths": [
             "[*]",
             "workflows[*]",
@@ -199,7 +199,7 @@
         "targetWorkflowNames": []
     },
     {
-        "name": "JMWE PostFunction TransitionIssueFunction restrictToProjectRoleId",
+        "name": "JMWE: PostFunction TransitionIssueFunction restrictToProjectRoleId",
         "jsonPaths": [
             "[*]",
             "workflows[*]",
@@ -217,7 +217,7 @@
         "targetWorkflowNames": []
     },
     {
-        "name": "JMWE PostFunction TransitionIssueFunction restrictToGroup",
+        "name": "JMWE: PostFunction TransitionIssueFunction restrictToGroup",
         "jsonPaths": [
             "[*]",
             "workflows[*]",
@@ -235,7 +235,7 @@
         "targetWorkflowNames": []
     },
     {
-        "name": "JMWE PostFunction LinkedIssuesValidator selectedLinkTypeId",
+        "name": "JMWE: PostFunction LinkedIssuesValidator selectedLinkTypeId",
         "jsonPaths": [
             "[*]",
             "workflows[*]",
@@ -253,7 +253,7 @@
         "targetWorkflowNames": []
     },
     {
-        "name": "JMWE PostFunction LinkedIssuesValidator selectedIssueTypeId",
+        "name": "JMWE: PostFunction LinkedIssuesValidator selectedIssueTypeId",
         "jsonPaths": [
             "[*]",
             "workflows[*]",
@@ -271,7 +271,7 @@
         "targetWorkflowNames": []
     },
     {
-        "name": "JMWE Condition UserCondition",
+        "name": "JMWE: Condition UserCondition",
         "jsonPaths": [
             "[*]",
             "workflows[*]",
