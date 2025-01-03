@@ -15,7 +15,7 @@
         "targetWorkflowNames": []
     },
     {
-        "name": "Jira - Workflow Status: From Status Reference",
+        "name": "Jira - Workflow Status: from statusReference [Obsolete]",
         "jsonPaths": [
             "[*]",
             "workflows[*]",
@@ -31,13 +31,44 @@
         "targetWorkflowNames": []
     },
     {
-        "name": "Jira - Workflow Status: To Status Reference",
+        "name": "Jira - Workflow Status: To statusReference [Obsolete]",
         "jsonPaths": [
             "[*]",
             "workflows[*]",
             "transitions[*]", 
             "to",
             "statusReference"
+        ],
+        "valueProcessorClass": null,
+        "valueRegex": "[0-9]+",
+        "valueCaptureGroups": [],
+        "valueReplacement": null,
+        "modelClass": "com.igsl.model.Status",
+        "targetWorkflowNames": []
+    },
+    {
+        "name": "Jira - Workflow Status: links fromStatusReference",
+        "jsonPaths": [
+            "[*]",
+            "workflows[*]",
+            "transitions[*]", 
+            "links[*]",
+            "fromStatusReference"
+        ],
+        "valueProcessorClass": null,
+        "valueRegex": "[0-9]+",
+        "valueCaptureGroups": [],
+        "valueReplacement": null,
+        "modelClass": "com.igsl.model.Status",
+        "targetWorkflowNames": []
+    },
+    {
+        "name": "Jira - Workflow Status: toStatusReference",
+        "jsonPaths": [
+            "[*]",
+            "workflows[*]",
+            "transitions[*]",
+            "toStatusReference"
         ],
         "valueProcessorClass": null,
         "valueRegex": "[0-9]+",

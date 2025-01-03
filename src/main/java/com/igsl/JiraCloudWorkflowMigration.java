@@ -3,8 +3,7 @@ package com.igsl;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.FileWriter;
-import java.net.URL;
-import java.net.http.HttpResponse;
+import java.nio.charset.Charset;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -42,19 +41,23 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.MappingIterator;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectReader;
+import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.igsl.model.Model;
 import com.igsl.model.Project;
-import com.igsl.model.ProjectRole;
 import com.igsl.model.User;
 import com.igsl.model.Workflow;
 import com.igsl.rest.Paged;
-import com.igsl.rest.Pagination;
 import com.igsl.rest.RestUtil;
+import com.igsl.workflow.BulkTransition;
+import com.igsl.workflow.BulkWorkflow;
+import com.igsl.workflow.BulkWorkflows;
 import com.igsl.workflow.MapperConfig;
 import com.igsl.workflow.MapperEntry;
+import com.igsl.workflow.WorkflowView;
 import com.igsl.workflow.preprocessor.ScriptRunnerCompressedData;
 import com.igsl.workflow.preprocessor.ValueProcessor;
 import com.jayway.jsonpath.Configuration;
@@ -68,10 +71,13 @@ public class JiraCloudWorkflowMigration {
 	private static final String NEWLINE = System.getProperty("line.separator");
 	private static final SimpleDateFormat SDF = new SimpleDateFormat("yyyyMMdd_HHmmss");
 	private static final ObjectMapper OM = new ObjectMapper()
+				.enable(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS)
 				.enable(SerializationFeature.INDENT_OUTPUT);
 	private static final Configuration JSONPATH_CONFIG_READ_PATH = Configuration.builder()
 			   .options(com.jayway.jsonpath.Option.AS_PATH_LIST)
 			   .build();
+	
+	private static final Charset UTF8 = Charset.forName("UTF-8");
 	
 	private static final String MATCH_RESULT = "MATCH_RESULT";
 	private static final String MATCH_RESULT_MATCHED = "Matched";
@@ -546,6 +552,7 @@ public class JiraCloudWorkflowMigration {
 				.pagination(new Paged<Workflow>(Workflow.class))
 				.requestAllPages();
 			int count = 0;
+			ObjectReader reader = OM.readerFor(BulkWorkflows.class);
 			for (Workflow workflow : workflows) {
 				String workflowName = workflow.getId().getName();
 				try {
@@ -565,6 +572,16 @@ public class JiraCloudWorkflowMigration {
 					String fileName = getWorkflowFileName(workflowName);
 					Path outputFile = outputDir.resolve(fileName);
 					String json = OM.writeValueAsString(wf);
+					// Sort JSON
+					MappingIterator<BulkWorkflows> iterator = reader.readValues(json);
+					List<BulkWorkflows> list = new ArrayList<>();
+					while (iterator.hasNext()) {
+						BulkWorkflows bwf = iterator.next();
+						bwf.sort();
+						list.add(bwf);
+					}
+					json = OM.writeValueAsString(list);
+					// Write sorted output
 					Files.writeString(outputFile, json);
 					Log.info(LOGGER, "Saved Workflow: " + workflowName + " to " + outputFile.toString());
 					Map<String, String> codes = extractScriptRunScript(json);
@@ -842,6 +859,9 @@ public class JiraCloudWorkflowMigration {
 		int success = 0;
 		List<String> errorWorkflowNames = new ArrayList<>();
 		Iterator<Path> it = Files.list(sourceDir).iterator();
+		ObjectReader reader = OM.readerFor(BulkWorkflows.class);
+		ObjectWriter hybridWriter = OM.writerWithView(WorkflowView.Hybrid.class);
+		ObjectWriter currentWriter = OM.writerWithView(WorkflowView.Current.class);
 		while (it.hasNext()) {
 			Path path = it.next();
 			if (pathMatcher.matches(path.getFileName())) {
@@ -852,9 +872,24 @@ public class JiraCloudWorkflowMigration {
 					String modifiedSource = source;
 					int modifiedCount = 0;
 					int notFoundCount = 0;
-					JsonNode workflow = OM.readTree(source);
-					workflowName = workflow.get(0).get("workflows").get(0).get("name").asText();
-					Log.debug(LOGGER, "Processing workflow: " + path.toString());
+					MappingIterator<BulkWorkflows> workflowIterator = reader.readValues(source);
+					// Each file will only contain a single workflow
+					BulkWorkflows workflow = workflowIterator.next();
+					workflow.sort();
+					List<BulkWorkflows> workflowList = new ArrayList<>();
+					workflowList.add(workflow);
+					String originalSource = hybridWriter.writeValueAsString(workflowList);
+					// JsonNode workflow = OM.readTree(source);
+					// workflowName = workflow.get(0).get("workflows").get(0).get("name").asText();
+					workflowName = workflow.getWorkflows().get(0).getName();
+					Log.debug(LOGGER, "Processing workflow: " + path.toString() + " Name: " + workflowName);
+					// Convert status reference
+					for (BulkTransition transition : workflow.getWorkflows().get(0).getTransitions()) {
+						if (transition.isObsoleteFormat()) {
+							transition.convertStatusReference();
+						}
+					}
+					modifiedSource = currentWriter.writeValueAsString(workflowList);
 					// Find same workflow in targetDir
 					Path targetWorkflowPath = targetDir.resolve(path.getFileName());
 					if (targetWorkflowPath.toFile().exists() && targetWorkflowPath.toFile().isFile()) {
@@ -882,7 +917,7 @@ public class JiraCloudWorkflowMigration {
 					}	// For all mappers
 					// Write to file
 					Path outputFile = outputDir.resolve(path.getFileName());
-					try (FileWriter fw = new FileWriter(outputFile.toFile())) {
+					try (FileWriter fw = new FileWriter(outputFile.toFile(), UTF8)) {
 						JsonNode node = OM.readTree(modifiedSource);
 						String output = OM.writeValueAsString(node);
 						fw.write(output);
