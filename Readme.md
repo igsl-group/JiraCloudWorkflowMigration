@@ -9,107 +9,52 @@ Edit /log4j2.xml as needed.
 ### General Configuration
 Edit /Config.json:
 <table border="1" style="border-collapse: collapse">
-    <tr>
-        <th>JSON Property</th>
-        <th>Description</th>
-        <th>Example</th> 
-    </tr>
-    <tr>
-        <td>production</td>
-        <td>Domain name of production Jira</td>
-        <td>kcwong.atlassian.net</td>
-    </tr>
-    <tr>
-        <td>sandbox</td>
-        <td>Domain name of production Jira</td>
-        <td>kcwong-sandbox-123.atlassian.net</td>
-    </tr>
-    <tr>
-        <td>email</td>
-        <td>User email. If not specified, you will be prompted to enter it.</td>
-        <td>kc.wong@igsl-group.com</td>
-    </tr>
-    <tr>
-        <td>token</td>
-        <td>API token. If not specified, you will be prompted to enter it.</td>
-        <td></td>
-    </tr>
-    <tr>
-        <td>rate</td>
-        <td>Max. no. of REST API calls within period</td>
-        <td>100</td>
-    </tr>
-    <tr>
-        <td>period</td>
-        <td>No. of milliseconds in a period</td>
-        <td>1000</td>
-    </tr>
-    <tr>
-        <td>objectTypePackage</td>
-        <td>Package name containing object type classes</td>
-        <td>com.igsl.model</td>
-    </tr>
-    <tr>
-        <td>objectTypes</td>
-        <td>List of object type class names</td>
-        <td>
-            [
-                "Status",
-                "Project",
-                "Field",
-                "Screen",
-                "Priority",
-                "User",
-                "Group",
-                "Workflow",
-                "Resolution",
-                "ProjectCategory"
-            ]
-        </td>
-    </tr>
+    <thead>
+        <tr>
+            <th>JSON Property</th>
+            <th>Description</th>
+            <th>Example</th> 
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>rate</td>
+            <td>Max. no. of REST API calls within period</td>
+            <td>100</td>
+        </tr>
+        <tr>
+            <td>period</td>
+            <td>No. of milliseconds in a period</td>
+            <td>1000</td>
+        </tr>
+        <tr>
+            <td>objectTypePackage</td>
+            <td>Package name containing object type classes</td>
+            <td>com.igsl.model</td>
+        </tr>
+        <tr>
+            <td>objectTypes</td>
+            <td>List of object type class names</td>
+            <td>
+                [
+                    "Status",
+                    "Project",
+                    "Field",
+                    "Screen",
+                    "Priority",
+                    "User",
+                    "Group",
+                    "Workflow",
+                    "Resolution",
+                    "ProjectCategory"
+                ]
+            </td>
+        </tr>
+    </tbody>
 </table>
 
 ### mapper/*.json
-Configure workflow remapping logic by adding JSON files in mapper folder.
-Each file contains an array of objects: 
-<table border="1" style="border-collapse: collapse">
-    <tr>
-        <th>JSON Property</th>
-        <th>Description</th>
-    </tr>
-    <tr>
-        <td>name</td>
-        <td>Name of this mapper configuration. This value is included in logs.</td>
-    </tr>
-    <tr>
-        <td>jsonPaths</td>
-        <td>Array of JSON path elements. Root "$" is implicitly included. Specify [*] for arrays.</td>
-    </tr>
-    <tr>
-        <td>valueProcessorClass</td>
-        <td>ValueProcessor class name to be used. If not null, the value extracted with jsonPaths is passed through this class before applying remapping.</td>
-    </tr>
-    <tr>
-        <td>valueRegex</td>
-        <td>Regular expression to extract object ID(s) from value.</td>
-    </tr>
-    <tr>
-        <td>valueCaptureGroups</td>
-        <td>Capture groups to use. If not specified, default is group 0 (the whole expression).</td>
-    </tr>
-    <tr>
-        <td>valueReplacement</td>
-        <td>Replacement for valueRegex. If not specified, default is $0 (value is remapped).</td>
-    </tr>
-    <tr>
-        <td>modelClass</td>
-        <td>Class name of object type. If not specified, then no remapping is done, only regular expression replacement is done.</td>
-    </tr>
-    <tr>
-        <td>targetWorkflowNames</td>
-        <td>Target workflow names for this mapper. If not specified, applies to all workflows.</td>
-    </tr>
-</table>
+Configure workflow remapping logic by adding JSON files in mapper folder. See mapperDisabled/Example.json for description and examples.
 
 #### Mapper Example: Screen ID
 ```

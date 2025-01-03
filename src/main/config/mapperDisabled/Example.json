@@ -20,6 +20,7 @@
     {
         "name": "Example: Remap all statuses",
         "jsonPaths": [
+            "[*]",
             "statuses[*]",
             "id"
         ],
