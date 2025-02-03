@@ -1,0 +1,22 @@
+[
+    {
+        "name": "Jira - Condition - Role ID",
+        "jsonPaths": [
+            "[*]",
+            "workflows[*]",
+            "transitions[*]",
+            "conditions",
+            "conditions[?(@.ruleKey==\"system:restrict-issue-transition\")]",
+            "parameters",
+            "roleIds"
+        ],
+        "valueProcessorClass": null,
+        "valueRegex": "[0-9]+",
+        "valueCaptureGroups": [],
+        "splitRegex": null,
+        "quote": null,
+        "valueReplacement": null,
+        "modelClass": "com.igsl.model.ProjectRole",
+        "targetWorkflowNames": []
+    }
+]
