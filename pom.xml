@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.igsl</groupId>
     <artifactId>JiraCloudWorkflowMigration</artifactId>
-    <version>1.2.3</version>
+    <version>1.2.4</version>
 
     <organization>
         <name>Integrated Global Solutions Limited</name>

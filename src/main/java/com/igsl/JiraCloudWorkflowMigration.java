@@ -3,6 +3,7 @@ package com.igsl;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.FileWriter;
+import java.io.PrintWriter;
 import java.nio.charset.Charset;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
@@ -57,6 +58,7 @@ import com.igsl.workflow.BulkWorkflow;
 import com.igsl.workflow.BulkWorkflows;
 import com.igsl.workflow.MapperConfig;
 import com.igsl.workflow.MapperEntry;
+import com.igsl.workflow.Version;
 import com.igsl.workflow.WorkflowView;
 import com.igsl.workflow.preprocessor.ScriptRunnerCompressedData;
 import com.igsl.workflow.preprocessor.ValueProcessor;
@@ -71,6 +73,7 @@ public class JiraCloudWorkflowMigration {
 	private static final String NEWLINE = System.getProperty("line.separator");
 	private static final SimpleDateFormat SDF = new SimpleDateFormat("yyyyMMdd_HHmmss");
 	private static final ObjectMapper OM = new ObjectMapper()
+				.setNodeFactory(new SortingNodeFactory())
 				.enable(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS)
 				.enable(SerializationFeature.INDENT_OUTPUT);
 	private static final Configuration JSONPATH_CONFIG_READ_PATH = Configuration.builder()
@@ -85,6 +88,21 @@ public class JiraCloudWorkflowMigration {
 	private static final String MATCH_RESULT_COLLISION = "Collision";
 	private static final String MATCH_WITH = "MATCH_WITH";
 	private static final String DELIMITER = "|";
+	
+	/*
+	 * Batch mode operates on multiple sources at once.
+	 * Each source contains its own workflow list, object dump and workflow dump.
+	 * Batch mode perform a single target dump, then perform matching with each source.
+	 * Then user manually verify matches.
+	 * Then batch mode remaps and updates workflow for each source. 
+	 */
+	private static Option batchSourceListOption;
+	private static Options batchMatchOptions;
+	private static Option batchMatchOption;
+	private static Options batchRemapOptions;
+	private static Option batchRemapOption;
+	private static Options batchUpdateOptions;
+	private static Option batchUpdateOption;
 	
 	private static Option emailOption;
 	private static Option tokenOption;
@@ -222,7 +240,6 @@ public class JiraCloudWorkflowMigration {
 				.build();
 		updateWorkflowOptions = new Options()
 				.addOption(updateWorkflowOption)
-				.addOption(targetHostOption)
 				.addOption(sourceDirOption)
 				.addOption(workflowListOption)
 				.addOption(emailOption)
@@ -283,7 +300,8 @@ public class JiraCloudWorkflowMigration {
 				.addOption(remapWorkflowOption)
 				.addOption(matchDirOption)
 				.addOption(sourceDirOption)
-				.addOption(targetDirOption);
+				.addOption(targetDirOption)
+				.addOption(workflowListOption);
 
 		// Export objects
 		exportOption = Option.builder()
@@ -295,6 +313,51 @@ public class JiraCloudWorkflowMigration {
 		exportOptions = new Options()
 				.addOption(targetHostOption)
 				.addOption(exportOption)
+				.addOption(emailOption)
+				.addOption(tokenOption);
+
+		// Batch options
+		batchSourceListOption = Option.builder()
+				.argName("Batch source directory list")
+				.option("bd")
+				.longOpt("batchDirectory")
+				.required()
+				.hasArgs()
+				.build();
+		
+		batchMatchOption = Option.builder()
+				.argName("Batch match")
+				.option("bm")
+				.longOpt("batchMatch")
+				.required()
+				.build();
+		batchMatchOptions = new Options()
+				.addOption(batchSourceListOption)
+				.addOption(targetDirOption)
+				.addOption(batchMatchOption)
+				.addOption(exactMatchOption);
+				
+		batchRemapOption = Option.builder()
+				.argName("Batch remap")
+				.option("br")
+				.longOpt("batchRemap")
+				.required()
+				.build();
+		batchRemapOptions = new Options()
+				.addOption(batchSourceListOption)
+				.addOption(targetDirOption)
+				.addOption(batchRemapOption);
+
+		batchUpdateOption = Option.builder()
+				.argName("Batch update")
+				.option("bu")
+				.longOpt("batchUpdate")
+				.required()
+				.build();
+		batchUpdateOptions = new Options()
+				.addOption(batchSourceListOption)
+				.addOption(batchUpdateOption)
+				.addOption(targetHostOption)
 				.addOption(emailOption)
 				.addOption(tokenOption);
 	}
@@ -356,14 +419,11 @@ public class JiraCloudWorkflowMigration {
 		return -1;
 	}
 	
-	private static void match(Config config, Path outputDir, CommandLine cmd, boolean exactMatch) 
+	private static void match(
+			Config config, Path source, Path target, Path outputDir, CommandLine cmd, boolean exactMatch) 
 			throws Exception {
-		String sourceDir = cmd.getOptionValue(sourceDirOption);
-		Path source = Paths.get(sourceDir);
-		String targetDir = cmd.getOptionValue(targetDirOption);
-		Path target = Paths.get(targetDir);
 		String packageName = config.getObjectTypePackage();
-		String outputTableFormat = "%-40s %-10s %-10s %-10s %-10s";
+		String outputTableFormat = "%-70s %-6s %-8s %-9s %-10s";
 		Log.info(LOGGER, 
 				Log.formatArguments(
 						outputTableFormat, 
@@ -540,6 +600,19 @@ public class JiraCloudWorkflowMigration {
 		return "Workflow - " + workflowName.replaceAll("\\W+", " ") + ".json";	
 	}
 	
+	private static String formatWorkflow(String json, Class<?> view) throws Exception {
+		ObjectReader reader = OM.readerFor(BulkWorkflows.class);
+		ObjectWriter writer = OM.writerWithView(view);
+		List<BulkWorkflows> list = new ArrayList<>();
+		MappingIterator<BulkWorkflows> it = reader.readValues(json);
+		while (it.hasNext()) {
+			BulkWorkflows wf = it.next();
+			wf.sort();
+			list.add(wf);
+		}
+		return writer.writeValueAsString(list);
+	}
+	
 	private static void exportWorkflow(Config config, String host, Path outputDir, CommandLine cmd) 
 			throws Exception {
 		try {
@@ -552,7 +625,6 @@ public class JiraCloudWorkflowMigration {
 				.pagination(new Paged<Workflow>(Workflow.class))
 				.requestAllPages();
 			int count = 0;
-			ObjectReader reader = OM.readerFor(BulkWorkflows.class);
 			for (Workflow workflow : workflows) {
 				String workflowName = workflow.getId().getName();
 				try {
@@ -573,14 +645,7 @@ public class JiraCloudWorkflowMigration {
 					Path outputFile = outputDir.resolve(fileName);
 					String json = OM.writeValueAsString(wf);
 					// Sort JSON
-					MappingIterator<BulkWorkflows> iterator = reader.readValues(json);
-					List<BulkWorkflows> list = new ArrayList<>();
-					while (iterator.hasNext()) {
-						BulkWorkflows bwf = iterator.next();
-						bwf.sort();
-						list.add(bwf);
-					}
-					json = OM.writeValueAsString(list);
+					json = formatWorkflow(json, WorkflowView.Hybrid.class);
 					// Write sorted output
 					Files.writeString(outputFile, json);
 					Log.info(LOGGER, "Saved Workflow: " + workflowName + " to " + outputFile.toString());
@@ -601,6 +666,10 @@ public class JiraCloudWorkflowMigration {
 		} catch (Exception ex) {
 			Log.error(LOGGER, "Error retriving list of workflows", ex);
 		}
+	}
+
+	private static void clearMapCache() {
+		mapCache.clear();
 	}
 	
 	// Cache of mappings
@@ -733,8 +802,8 @@ public class JiraCloudWorkflowMigration {
 				}
 			}
 			m.appendReplacement(sb, replacement);
-			m.appendTail(sb);
 		}
+		m.appendTail(sb);
 		if (sb.length() != 0) {
 			newValue = sb.toString();
 			Log.debug(LOGGER, modelClassName + " value modified: " + newValue);
@@ -788,18 +857,20 @@ public class JiraCloudWorkflowMigration {
 						// Resolve value
 						String value = valueCtx.read(resolvedPath);
 						Log.trace(LOGGER, "JSON path: " + resolvedPath + " value = " + value);
-						try {
-							String newValue = processValue(matchDir, mapper, resolvedPath, value);
-							Log.trace(LOGGER, "JSON path: " + resolvedPath + " new value = " + newValue);
-							if (!value.equals(newValue)) {
-								valueCtx.set(resolvedPath, newValue);
-								result.addChanged();
+						if (value != null) {
+							try {
+								String newValue = processValue(matchDir, mapper, resolvedPath, value);
+								Log.trace(LOGGER, "JSON path: " + resolvedPath + " new value = " + newValue);
+								if (!value.equals(newValue)) {
+									valueCtx.set(resolvedPath, newValue);
+									result.addChanged();
+								}
+							} catch (MappingNotFoundException mnfex) {
+								Log.trace(LOGGER, 
+										"JSON path: " + resolvedPath + " value = " + value + " Mapping not found");
+								result.addMappingNotFound();
 							}
-						} catch (MappingNotFoundException mnfex) {
-							Log.trace(LOGGER, 
-									"JSON path: " + resolvedPath + " value = " + value + " Mapping not found");
-							result.addMappingNotFound();
-						}
+						}	// Else no change
 					}
 				}
 			} catch (PathNotFoundException pnfex) {
@@ -816,19 +887,21 @@ public class JiraCloudWorkflowMigration {
 						// Resolve value
 						String value = valueCtx.read(resolvedPath);
 						Log.debug(LOGGER, "JSON path: " + resolvedPath + " value = " + value);
-						try {
-							String newValue = processValue(matchDir, mapper, resolvedPath, value);
-							Log.debug(LOGGER, "JSON path: " + resolvedPath + " new value = " + newValue);
-							if (!value.equals(newValue)) {
-								valueCtx.set(resolvedPath, newValue);
-								result.addChanged();
+						if (value != null) {
+							try {
+								String newValue = processValue(matchDir, mapper, resolvedPath, value);
+								Log.debug(LOGGER, "JSON path: " + resolvedPath + " new value = " + newValue);
+								if (!value.equals(newValue)) {
+									valueCtx.set(resolvedPath, newValue);
+									result.addChanged();
+								}
+							} catch (MappingNotFoundException mnfex) {
+								Log.trace(LOGGER, 
+										"JSON path: " + resolvedPath + " value = " + value + " Mapping not found");
+								result.addMappingNotFound();
 							}
-						} catch (MappingNotFoundException mnfex) {
-							Log.trace(LOGGER, 
-									"JSON path: " + resolvedPath + " value = " + value + " Mapping not found");
-							result.addMappingNotFound();
-						}
-					}
+						} // Else no change
+					} 
 				}
 			} catch (PathNotFoundException pnfex) {
 				// Ignore
@@ -849,10 +922,26 @@ public class JiraCloudWorkflowMigration {
 		return sourceValueCtx.jsonString();
 	}
 	
-	private static void remapWorkflow(Config config, Path outputDir, CommandLine cmd) throws Exception {
-		Path sourceDir = Paths.get(cmd.getOptionValue(sourceDirOption));
-		Path matchDir = Paths.get(cmd.getOptionValue(matchDirOption));
-		Path targetDir = Paths.get(cmd.getOptionValue(targetDirOption));
+	private static void remapWorkflow(
+			Config config, 
+			Path sourceDir,
+			Path workflowListFile,
+			Path targetDir,
+			Path matchDir,
+			Path outputDir, 
+			CommandLine cmd) throws Exception {
+		List<String> workflowAllowList = new ArrayList<>();
+		if (workflowListFile != null) {
+			StringBuilder sb = new StringBuilder();
+			try (BufferedReader r = new BufferedReader(new FileReader(workflowListFile.toFile()))) {
+				String name = null;
+				while ((name = r.readLine()) != null) {
+					workflowAllowList.add(name);
+					sb.append(name).append(NEWLINE);
+				}
+			} 
+			Log.info(LOGGER, "Workflow(s) to be processed: \n" + sb.toString());
+		}
 		PathMatcher pathMatcher = FileSystems.getDefault().getPathMatcher("glob:*.json");
 		MapperConfig mapperConfig = MapperConfig.getInstance();
 		int total = 0;
@@ -860,13 +949,12 @@ public class JiraCloudWorkflowMigration {
 		List<String> errorWorkflowNames = new ArrayList<>();
 		Iterator<Path> it = Files.list(sourceDir).iterator();
 		ObjectReader reader = OM.readerFor(BulkWorkflows.class);
-		ObjectWriter hybridWriter = OM.writerWithView(WorkflowView.Hybrid.class);
+		//ObjectWriter hybridWriter = OM.writerWithView(WorkflowView.Hybrid.class);
 		ObjectWriter currentWriter = OM.writerWithView(WorkflowView.Current.class);
 		while (it.hasNext()) {
 			Path path = it.next();
 			if (pathMatcher.matches(path.getFileName())) {
 				String workflowName = null;
-				total++;
 				try {
 					String source = Files.readString(path);
 					String modifiedSource = source;
@@ -875,14 +963,26 @@ public class JiraCloudWorkflowMigration {
 					MappingIterator<BulkWorkflows> workflowIterator = reader.readValues(source);
 					// Each file will only contain a single workflow
 					BulkWorkflows workflow = workflowIterator.next();
+					// Sort
 					workflow.sort();
+					// Convert status references
+					workflow.getWorkflows().forEach(bwf -> {
+						bwf.getTransitions().forEach(t -> {
+							t.convertStatusReference();
+						});
+					});
 					List<BulkWorkflows> workflowList = new ArrayList<>();
 					workflowList.add(workflow);
-					String originalSource = hybridWriter.writeValueAsString(workflowList);
+					String originalSource = currentWriter.writeValueAsString(workflowList);
 					// JsonNode workflow = OM.readTree(source);
 					// workflowName = workflow.get(0).get("workflows").get(0).get("name").asText();
 					workflowName = workflow.getWorkflows().get(0).getName();
-					Log.debug(LOGGER, "Processing workflow: " + path.toString() + " Name: " + workflowName);
+					if (!workflowAllowList.isEmpty() && !workflowAllowList.contains(workflowName)) {
+						//Log.info(LOGGER, "Workflow ignored: " + path.toString() + " Name: " + workflowName);
+						continue;
+					}
+					total++;
+					Log.info(LOGGER, "Processing workflow: " + path.toString() + " Name: " + workflowName);
 					// Convert status reference
 					for (BulkTransition transition : workflow.getWorkflows().get(0).getTransitions()) {
 						if (transition.isObsoleteFormat()) {
@@ -918,8 +1018,7 @@ public class JiraCloudWorkflowMigration {
 					// Write to file
 					Path outputFile = outputDir.resolve(path.getFileName());
 					try (FileWriter fw = new FileWriter(outputFile.toFile(), UTF8)) {
-						JsonNode node = OM.readTree(modifiedSource);
-						String output = OM.writeValueAsString(node);
+						String output = formatWorkflow(modifiedSource, WorkflowView.Current.class);
 						fw.write(output);
 						success++;
 						if (modifiedCount > 0) {
@@ -949,11 +1048,11 @@ public class JiraCloudWorkflowMigration {
 		}
 		Log.info(LOGGER, "Workflows remapped: " + success + "/" + total);
 		if (errorWorkflowNames.size() != 0) {
-			StringBuilder sb = new StringBuilder();
+			StringBuilder sbError = new StringBuilder();
 			for (String name : errorWorkflowNames) {
-				sb.append(NEWLINE).append(name);
+				sbError.append(NEWLINE).append(name);
 			}
-			Log.info(LOGGER, "Error in " + errorWorkflowNames.size() + " workflows: " + sb.toString());
+			Log.info(LOGGER, "Error in " + errorWorkflowNames.size() + " workflows: " + sbError.toString());
 		}
 	}
 	
@@ -970,12 +1069,18 @@ public class JiraCloudWorkflowMigration {
 		Log.info(LOGGER, "To: " + newValue);
 	}
 	
-	private static void updateWorkflow(Config config, String host, CommandLine cmd) 
+	private static void updateWorkflow(
+			Config config, 
+			Path workflowDir,
+			Path workflowListFile,
+			String host, 
+			CommandLine cmd) 
 			throws Exception {
-		String workflowListFile = cmd.getOptionValue(workflowListOption);
+		ObjectReader reader = OM.readerFor(BulkWorkflows.class);
+		ObjectWriter currentWriter = OM.writerWithView(WorkflowView.Current.class);
 		List<String> workflowList = new ArrayList<>();
 		StringBuilder sb = new StringBuilder();
-		try (BufferedReader r = new BufferedReader(new FileReader(workflowListFile))) {
+		try (BufferedReader r = new BufferedReader(new FileReader(workflowListFile.toFile()))) {
 			String name = null;
 			while ((name = r.readLine()) != null) {
 				workflowList.add(name);
@@ -983,7 +1088,6 @@ public class JiraCloudWorkflowMigration {
 			}
 		} 
 		Log.info(LOGGER, "Workflow(s) to be processed: \n" + sb.toString());
-		Path workflowDir = Paths.get(cmd.getOptionValue(sourceDirOption));
 		PathMatcher pathMatcher = FileSystems.getDefault().getPathMatcher("glob:{**/*.json,*.json}");
 		int total = 0;
 		int ignored = 0;
@@ -994,8 +1098,18 @@ public class JiraCloudWorkflowMigration {
 			if (pathMatcher.matches(path)) {
 				total++;
 				try {
-					JsonNode node = OM.readTree(Files.readString(path));
-					String workflowName = node.get(0).get("workflows").get(0).get("name").asText();
+					MappingIterator<BulkWorkflows> wfIt = reader.readValues(Files.readString(path));
+					BulkWorkflows wf = null;
+					if (wfIt.hasNext()) {
+						wf = wfIt.next();
+					} else {
+						// No data in this file, ignore and continue
+						Log.warn(LOGGER, "File [" + path + "] does not contain a valid workflow");
+						ignored++;
+						total--;
+						continue;
+					}
+					String workflowName = wf.getWorkflows().get(0).getName();
 					if (!workflowList.contains(workflowName)) {
 						Log.info(LOGGER, 
 								"Workflow ignored: [" + workflowName + "]");
@@ -1006,10 +1120,37 @@ public class JiraCloudWorkflowMigration {
 						Log.info(LOGGER, 
 								"Processing workflow [" + workflowName + "]...");
 					}
-					String workflowId = node.get(0).get("workflows").get(0).get("id").asText();
+					// Update workflow id and version
+					Map<String, Object> param = new HashMap<>();
+					List<String> nameList = new ArrayList<>();
+					nameList.add(workflowName);
+					param.put("workflowNames", nameList);
+					List<BulkWorkflows> list = 
+						RestUtil.getInstance(BulkWorkflows.class)
+						.config(config)
+						.host(host)
+						.path("/rest/api/3/workflows")
+						.payload(param)
+						.method(HttpMethod.POST)
+						.requestAllPages();
+					if (list.size() == 1) {
+						String id = list.get(0).getWorkflows().get(0).getId();
+						Version version = list.get(0).getWorkflows().get(0).getVersion();
+						wf.getWorkflows().get(0).setId(id);
+						Log.error(LOGGER, "Workflow id for [" + workflowName + "] updated to [" + id + "]");
+						wf.getWorkflows().get(0).getVersion().setId(version.getId());
+						Log.error(LOGGER, "Workflow version id for [" + workflowName + "] updated to [" + version.getId() + "]");
+						wf.getWorkflows().get(0).getVersion().setVersionNumber(version.getVersionNumber());
+						Log.error(LOGGER, "Workflow version number for [" + workflowName + "] updated to [" + version.getVersionNumber() + "]");
+					} else {
+						Log.error(LOGGER, "Unable to update workflow id and version for [" + workflowName + "]");
+					}
+					// Reformat JSON
+					String json = currentWriter.writeValueAsString(wf);
+					JsonNode node = OM.readTree(json);
 					// Validate
 					Map<String, Object> payload = new HashMap<>();
-					payload.put("payload", node.get(0));
+					payload.put("payload", node);
 					// Validate
 					RestUtil.getInstance(Object.class)
 						.config(config)
@@ -1024,7 +1165,7 @@ public class JiraCloudWorkflowMigration {
 						.host(host)
 						.path("/rest/api/3/workflows/update")
 						.method(HttpMethod.POST)
-						.payload(node.get(0))
+						.payload(node)
 						.request();
 					Log.info(LOGGER, 
 							"Workflow updated: " + workflowName + " from file " + path.toString());
@@ -1197,8 +1338,18 @@ public class JiraCloudWorkflowMigration {
 		}
 	}
 
-	private static Path createOutputDirectory() throws Exception {
-		Path outputDir = Paths.get(SDF.format(new Date()));
+	private static Path createOutputDirectory(String parent, String prefix, boolean timestamped) throws Exception {
+		Path outputDir;
+		if (parent != null) {
+			outputDir = Paths.get(
+					parent, 
+					(prefix != null? prefix : "") + 
+					(timestamped? SDF.format(new Date()) : ""));
+		} else {
+			outputDir = Paths.get(
+					(prefix != null? prefix : "") + 
+					(timestamped? SDF.format(new Date()) : ""));
+		}
 		Files.createDirectories(outputDir);
 		return outputDir;
 	}
@@ -1209,9 +1360,49 @@ public class JiraCloudWorkflowMigration {
 		CommandLine cmd = null;
 		Path outputDir = null;
 		try {
+			cmd = parser.parse(batchMatchOptions, args);
+			boolean exactMatch = cmd.hasOption(exactMatchOption);
+			String[] sourceList = cmd.getOptionValues(batchSourceListOption);
+			for (String source : sourceList) {
+				outputDir = createOutputDirectory(source, "MATCH", false);
+				Path src = Paths.get(source);
+				Path target = Paths.get(cmd.getOptionValue(targetDirOption));
+				match(config, src, target, outputDir, cmd, exactMatch);
+			}
+		} catch (ParseException pex) {
+			// Ignore
+		}
+		try {
+			cmd = parser.parse(batchRemapOptions, args);
+			String[] sourceList = cmd.getOptionValues(batchSourceListOption);
+			for (String source : sourceList) {
+				clearMapCache();
+				Path targetDir = Paths.get(cmd.getOptionValue(targetDirOption));
+				Path matchDir = Paths.get(source, "MATCH");
+				outputDir = createOutputDirectory(source, "REMAP", false);
+				Path workflowListFile = Paths.get(source, "Workflow.txt");
+				remapWorkflow(config, Paths.get(source), workflowListFile, targetDir, matchDir, outputDir, cmd);
+			}
+		} catch (ParseException pex) {
+			// Ignore
+		}
+		try {
+			cmd = parser.parse(batchUpdateOptions, args);
+			String[] sourceList = cmd.getOptionValues(batchSourceListOption);
+			for (String source : sourceList) {
+				String targetHost = cmd.getOptionValue(targetHostOption);
+				getCredential(config, cmd);
+				Path workflowDir = Paths.get(source, "REMAP");
+				Path workflowListFile = Paths.get(source, "Workflow.txt");
+				updateWorkflow(config, workflowDir, workflowListFile, targetHost, cmd);
+			}
+		} catch (ParseException pex) {
+			// Ignore
+		}
+		try {
 			cmd = parser.parse(exportOptions, args);
 			String targetHost = cmd.getOptionValue(targetHostOption);
-			outputDir = createOutputDirectory();
+			outputDir = createOutputDirectory(null, null, true);
 			getCredential(config, cmd);
 			export(config, targetHost, outputDir, cmd);
 			exportWorkflow(config, targetHost, outputDir, cmd);
@@ -1221,15 +1412,22 @@ public class JiraCloudWorkflowMigration {
 		try {
 			cmd = parser.parse(matchOptions, args);
 			boolean exactMatch = cmd.hasOption(exactMatchOption);
-			outputDir = createOutputDirectory();
-			match(config, outputDir, cmd, exactMatch);
+			outputDir = createOutputDirectory(null, null, true);
+			Path source = Paths.get(cmd.getOptionValue(sourceDirOption));
+			Path target = Paths.get(cmd.getOptionValue(targetDirOption));
+			match(config, source, target, outputDir, cmd, exactMatch);
 		} catch (ParseException pex) {
 			// Ignore
 		}
 		try {
 			cmd = parser.parse(remapWorkflowOptions, args);
-			outputDir = createOutputDirectory();
-			remapWorkflow(config, outputDir, cmd);
+			getCredential(config, cmd);
+			Path sourceDir = Paths.get(cmd.getOptionValue(sourceDirOption));
+			Path matchDir = Paths.get(cmd.getOptionValue(matchDirOption));
+			Path targetDir = Paths.get(cmd.getOptionValue(targetDirOption));
+			Path workflowListFile = Paths.get(cmd.getOptionValue(workflowListOption));
+			outputDir = createOutputDirectory(null, null, true);
+			remapWorkflow(config, sourceDir, workflowListFile, targetDir, matchDir, outputDir, cmd);
 		} catch (ParseException pex) {
 			// Ignore
 		}
@@ -1249,7 +1447,9 @@ public class JiraCloudWorkflowMigration {
 			cmd = parser.parse(updateWorkflowOptions, args);
 			String targetHost = cmd.getOptionValue(targetHostOption);
 			getCredential(config, cmd);
-			updateWorkflow(config, targetHost, cmd);
+			Path workflowDir = Paths.get(cmd.getOptionValue(sourceDirOption));
+			Path workflowListFile = Paths.get(cmd.getOptionValue(workflowListOption));
+			updateWorkflow(config, workflowDir, workflowListFile, targetHost, cmd);
 		} catch (ParseException pex) {
 			// Ignore
 		}
@@ -1273,14 +1473,26 @@ public class JiraCloudWorkflowMigration {
 		}
 		if (cmd == null) {
 			HelpFormatter hf = new HelpFormatter();
-			hf.printHelp("Export objects from site", exportOptions);
-			hf.printHelp("Match export objects from two sites", matchOptions);
-			hf.printHelp("Remap workflows to files", remapWorkflowOptions);
-			hf.printHelp("Grant admin rights in all projects", grantProjectsOptions);
-			hf.printHelp("Revoke admin rights in all projects", revokeProjectsOptions);
-			hf.printHelp("Update workflows in site", updateWorkflowOptions);
-			hf.printHelp("ScriptRunner pack utility", packOptions);
-			hf.printHelp("ScriptRunner unpack utility", unpackOptions);
+			
+			Path source = Paths.get(JiraCloudWorkflowMigration.class.getProtectionDomain().getCodeSource().getLocation().toURI());
+			String jarPath = Paths.get(".").toAbsolutePath().relativize(source).toString();
+			String app = "java -jar " + jarPath;
+			int width = 100;
+			
+			hf.printHelp(width, app, "Export objects from site", exportOptions, "\n", true);
+			hf.printHelp(width, app, "Match export objects from two sites", matchOptions, "\n", true);
+			hf.printHelp(width, app, "Remap workflows to files", remapWorkflowOptions, "\n", true);
+			hf.printHelp(width, app, "Update workflows in site", updateWorkflowOptions, "\n", true);
+
+			hf.printHelp(width, app, "Batch match", batchMatchOptions, "\n", true);
+			hf.printHelp(width, app, "Batch remap", batchRemapOptions, "\n", true);
+			hf.printHelp(width, app, "Batch update", batchUpdateOptions, "\n", true);
+			
+			hf.printHelp(width, app, "Grant admin rights in all projects", grantProjectsOptions, "\n", true);
+			hf.printHelp(width, app, "Revoke admin rights in all projects", revokeProjectsOptions, "\n", true);
+			
+			hf.printHelp(width, app, "ScriptRunner pack utility", packOptions, "\n", true);
+			hf.printHelp(width, app, "ScriptRunner unpack utility", unpackOptions, "\n", true);
 		}
 	}
 }

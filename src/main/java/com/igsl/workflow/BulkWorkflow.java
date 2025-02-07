@@ -25,6 +25,7 @@ public class BulkWorkflow implements Comparable<BulkWorkflow>, Sortable {
 	private String description;
 	private String id;
 	private String name;
+	private Version version;
 	private List<BulkTransition> transitions;
 	private Map<String, Object> otherProperties = new HashMap<>();
     @JsonAnySetter
@@ -76,5 +77,11 @@ public class BulkWorkflow implements Comparable<BulkWorkflow>, Sortable {
 	}
 	public void setTransitions(List<BulkTransition> transitions) {
 		this.transitions = transitions;
+	}
+	public Version getVersion() {
+		return version;
+	}
+	public void setVersion(Version version) {
+		this.version = version;
 	}
 }
