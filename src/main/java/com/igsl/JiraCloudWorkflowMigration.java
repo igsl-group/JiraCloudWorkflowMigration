@@ -1088,6 +1088,7 @@ public class JiraCloudWorkflowMigration {
 			}
 		} 
 		Log.info(LOGGER, "Workflow(s) to be processed: \n" + sb.toString());
+		Map<String, String> errorWorkflows = new HashMap<>();
 		PathMatcher pathMatcher = FileSystems.getDefault().getPathMatcher("glob:{**/*.json,*.json}");
 		int total = 0;
 		int ignored = 0;
@@ -1105,8 +1106,7 @@ public class JiraCloudWorkflowMigration {
 					} else {
 						// No data in this file, ignore and continue
 						Log.warn(LOGGER, "File [" + path + "] does not contain a valid workflow");
-						ignored++;
-						total--;
+						errorWorkflows.put(path.toString(), "Not valid workflow");
 						continue;
 					}
 					String workflowName = wf.getWorkflows().get(0).getName();
@@ -1172,11 +1172,18 @@ public class JiraCloudWorkflowMigration {
 					success++;
 				} catch (Exception ex) {
 					Log.error(LOGGER, "Error updating workflow from file: " + path.toString(), ex);
+					errorWorkflows.put(path.toString(), ex.getMessage());
 				}
 			} // If path matches pattern
 		}
 		Log.info(LOGGER, "Workflows updated: " + success + "/" + total);
 		Log.info(LOGGER, "Workflows ignored: " + ignored);
+		if (errorWorkflows.size() != 0) {
+			Log.error(LOGGER, "Errors: ");
+			errorWorkflows.entrySet().forEach(entry -> {
+				Log.error(LOGGER, entry.getKey() + ": " + entry.getValue());
+			});
+		}
 	}
 
 	// Get list of projects
