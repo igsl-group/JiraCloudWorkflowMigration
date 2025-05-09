@@ -289,5 +289,24 @@
         "valueReplacement": "\"userFieldsToCheck\":[$1]",
         "modelClass": "com.igsl.mode.Field",
         "targetWorkflowNames": []
+    },
+    {
+        "name": "JMWE: Validator ExpressionValidator",
+        "jsonPaths": [
+            "[*]",
+            "workflows[*]",
+            "transitions[*]",
+            "validators[*]",
+            "parameters[?(@.appKey==\"com.onresolve.jira.groovy.groovyrunner__script-workflow-validators\")]",
+            "config"
+        ],
+        "valueProcessorClass": null,
+        "valueRegex": "customfield_[0-9]+",
+        "valueCaptureGroups": [],
+        "splitRegex": null,
+        "quote": null,
+        "valueReplacement": null,
+        "modelClass": "com.igsl.mode.Field",
+        "targetWorkflowNames": []
     }
 ]

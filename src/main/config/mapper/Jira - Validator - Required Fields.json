@@ -1,0 +1,21 @@
+[
+    {
+        "name": "Jira - Validator - Required Fields",
+        "jsonPaths": [
+            "[*]",
+            "workflows[*]",
+            "transitions[*]",
+            "validators[?(@.ruleKey==\"system:validate-field-value\" && @.parameters.ruleType==\"fieldRequired\")]",
+            "parameters",
+            "fieldsRequired"
+        ],
+        "valueProcessorClass": null,
+        "valueRegex": "customfield_[0-9]+",
+        "valueCaptureGroups": [],
+        "splitRegex": null,
+        "quote": null,
+        "valueReplacement": null,
+        "modelClass": "com.igsl.model.Field",
+        "targetWorkflowNames": []
+    }
+]
