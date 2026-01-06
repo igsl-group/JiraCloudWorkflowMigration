@@ -3,7 +3,6 @@ package com.igsl;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.FileWriter;
-import java.io.PrintWriter;
 import java.nio.charset.Charset;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
@@ -22,10 +21,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import javax.ws.rs.HttpMethod;
-import javax.ws.rs.core.GenericType;
-import javax.ws.rs.core.Response;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -54,7 +49,6 @@ import com.igsl.model.Workflow;
 import com.igsl.rest.Paged;
 import com.igsl.rest.RestUtil;
 import com.igsl.workflow.BulkTransition;
-import com.igsl.workflow.BulkWorkflow;
 import com.igsl.workflow.BulkWorkflows;
 import com.igsl.workflow.MapperConfig;
 import com.igsl.workflow.MapperEntry;
@@ -66,6 +60,10 @@ import com.jayway.jsonpath.Configuration;
 import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
 import com.jayway.jsonpath.PathNotFoundException;
+
+import jakarta.ws.rs.HttpMethod;
+import jakarta.ws.rs.core.GenericType;
+import jakarta.ws.rs.core.Response;
 
 public class JiraCloudWorkflowMigration {
 	

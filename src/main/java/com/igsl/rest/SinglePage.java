@@ -3,12 +3,10 @@ package com.igsl.rest;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 /**
  * For REST APIs without pagination, 
@@ -40,8 +38,7 @@ public class SinglePage<T> extends Pagination<T> {
 	}
 
 	@Override
-	public void setResponse(Response response, ObjectMapper om) 
-			throws JsonProcessingException, JsonMappingException {
+	public void setResponse(Response response, ObjectMapper om) {
 		JsonNode node = om.readTree(response.readEntity(String.class));
 		if (node != null) {
 			if (attributeName != null) {

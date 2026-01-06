@@ -11,30 +11,29 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import javax.ws.rs.HttpMethod;
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.client.Entity;
-import javax.ws.rs.client.Invocation.Builder;
-import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedHashMap;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
-
 import org.apache.http.HttpStatus;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.jaxrs.json.JacksonJaxbJsonProvider;
-import com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider;
 import com.igsl.Config;
 import com.igsl.Log;
+
+import jakarta.ws.rs.HttpMethod;
+import jakarta.ws.rs.client.Client;
+import jakarta.ws.rs.client.ClientBuilder;
+import jakarta.ws.rs.client.Entity;
+import jakarta.ws.rs.client.Invocation.Builder;
+import jakarta.ws.rs.client.WebTarget;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.MultivaluedHashMap;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.SerializationFeature;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.jakarta.rs.json.JacksonJsonProvider;
 
 public class RestUtil<T> {
 
@@ -45,12 +44,13 @@ public class RestUtil<T> {
 	private static final long DEFAULT_PERIOD_MUILLISECOND = 1000L;
 	
 	private static final Logger LOGGER = LogManager.getLogger();
-	private static final ObjectMapper OM = new ObjectMapper()
+	private static final JsonMapper OM = JsonMapper.builder()
 			.enable(SerializationFeature.INDENT_OUTPUT)
 			.enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
-			.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+			.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+			.build();
 	private static final JacksonJsonProvider JACKSON_JSON_PROVIDER = 
-			new JacksonJaxbJsonProvider()
+			new JacksonJsonProvider(OM)
 			.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
 			.configure(SerializationFeature.INDENT_OUTPUT, true);
 
@@ -302,7 +302,7 @@ public class RestUtil<T> {
 	 * @throws IllegalStateException If status code does not match.
 	 */
 	public Response request() 
-			throws URISyntaxException, IllegalStateException, JsonProcessingException, JsonMappingException {
+			throws URISyntaxException, IllegalStateException {
 		Client client = ClientBuilder.newClient();
 		client.register(JACKSON_JSON_PROVIDER);
 		String finalPath = this.path;
@@ -428,7 +428,7 @@ public class RestUtil<T> {
 	 * @throws JsonMappingException
 	 */
 	public List<T> requestNextPage() 
-			throws JsonMappingException, JsonProcessingException, IllegalStateException, URISyntaxException {
+			throws IllegalStateException, URISyntaxException {
 		if (this.pagination == null) {
 			throw new IllegalStateException("Pagination is not configured. Call .pagination() first.");
 		}
@@ -449,7 +449,7 @@ public class RestUtil<T> {
 	}
 	
 	public List<T> requestAllPages() 
-			throws JsonMappingException, JsonProcessingException, IllegalStateException, URISyntaxException {
+			throws IllegalStateException, URISyntaxException {
 		if (this.pagination == null) {
 			throw new IllegalStateException("Pagination is not configured. Call .pagination() first.");
 		}

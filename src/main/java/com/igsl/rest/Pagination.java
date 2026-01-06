@@ -2,11 +2,9 @@ package com.igsl.rest;
 
 import java.util.List;
 
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 
 public abstract class Pagination<T> {
 	protected Class<T> dataClass;
@@ -37,8 +35,7 @@ public abstract class Pagination<T> {
 	 * @throws JsonProcessingException
 	 * @throws JsonMappingException
 	 */
-	public abstract void setResponse(Response response, ObjectMapper om) 
-			throws JsonProcessingException, JsonMappingException;
+	public abstract void setResponse(Response response, ObjectMapper om);
 	
 	/**
 	 * Tells if there may be more pages of results.
